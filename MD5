@@ -1,0 +1,17 @@
+7fcfcd38bba618c147d8747bedcacc9f *DESCRIPTION
+98fa0edb6258ca0687d6560e5fffb10e *NAMESPACE
+439849d6716f74b1a9738fb2f95839dd *NEWS.md
+b9d7656bfc9b14d9c194871c7391eb28 *R/bayes.R
+899483b5297d18d9bfa3ba6900420143 *R/glm.R
+fe3105ca518c21ed4ab8708d29dff19c *R/lme.R
+4dd8b0ce779d03c176ea8a1cad63f8bb *R/tf.R
+aecdcf783d0e5c4b944ad8553ca364c2 *man/step_embed.Rd
+a5b8636f9f066b991154ac0e6b063191 *man/step_lencode_bayes.Rd
+6e1a15243ae72b7f0529f7d02b44bcba *man/step_lencode_glm.Rd
+35ed49b438a1db54e85b57b8fe2d681e *man/step_lencode_mixed.Rd
+798e5ac1d6cbbc9c6493c4ccff2a9dbf *tests/testthat.R
+439746b0a1b9c7d22e456ab765c2be21 *tests/testthat/make_example_data.R
+facb36a8dd917f79eec5428a3dfc4676 *tests/testthat/test_mixed.R
+2bdf55847e1a0935d10661d578387562 *tests/testthat/test_no_pooling.R
+99d751fa61ea943ecde8658dd9470d84 *tests/testthat/test_pooling.R
+f0f230199ce519f34f3f303c0c03c0a0 *tests/testthat/test_tf.R
