@@ -1,3 +1,11 @@
+# `embed` 0.0.3
+
+## New Steps
+
+ * `step_umap()` was added for both supervised and unsupervised encodings. 
+ * `step_woe()` created weight of evidence encodings.
+
+
 # `embed` 0.0.2
 
 A mostly maintainence release to be compatible with version 0.1.3 of `recipes`. 
