@@ -179,7 +179,9 @@ woe_table <- function(predictor, outcome, Laplace = 1e-6) {
          call. = FALSE)
   }
 
-  if(is.factor(predictor)) predictor <- as.character(predictor)
+  if (is.factor(predictor)) {
+    predictor <- as.character(predictor)
+  }
 
   woe_expr <- parse(
     text = sprintf(
@@ -280,6 +282,7 @@ dictionary <- function(.data, outcome, ..., Laplace = 1e-6) {
 #'
 #'
 #' @importFrom rlang !!
+#' @importFrom dplyr one_of
 #' @export
 add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
   if (missing(.data)) {
@@ -318,14 +321,22 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
   if (missing(...)) {
     dots_vars <- names(.data)
   } else {
-    dots_vars <- names(.data %>% select(...))
+    dots_vars <- names(.data %>% dplyr::select(...))
   }
 
   output <- dictionary %>%
     dplyr::filter(variable %in% dots_vars) %>%
-    dplyr::select(variable, predictor, woe) %>%
-    dplyr::group_by(variable) %>%
-    tidyr::nest(.key = "woe_table") %>%
+    dplyr::select(variable, predictor, woe)
+  
+  # See https://tidyr.tidyverse.org/dev/articles/in-packages.html
+  if (tidyr_new_interface()) {
+    output <- tidyr::nest(output, woe_table = -dplyr::one_of("variable"))
+  } else {
+    output <- tidyr::nest(output, .key = "woe_table")
+  }
+  
+  output <- 
+    output %>%
     dplyr::mutate(
       woe_table =
         purrr::map2(woe_table, variable,
@@ -358,7 +369,7 @@ prep.step_woe <- function(x, training, info = NULL, ...) {
   check_type(training[, col_names], quant = FALSE)
   check_type(training[, outcome_name], quant = FALSE)
 
-  if(is.null(x$dictionary)) {
+  if (is.null(x$dictionary)) {
     x$dictionary <- dictionary(
       .data = training[, unique(c(outcome_name, col_names))],
       outcome = !!x$outcome
@@ -422,6 +433,12 @@ tidy.step_woe <- function(x, ...) {
 }
 
 # ------------------------------------------------------------------------------
+
+#' @importFrom utils packageVersion
+tidyr_new_interface <- function() {
+  utils::packageVersion("tidyr") > "0.8.99"
+}
+
 
 #' @importFrom utils globalVariables
 utils::globalVariables(

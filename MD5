@@ -1,13 +1,13 @@
-852155043abecea0566d4c96434cdb31 *DESCRIPTION
-b5492ec50bc09f41350f51663d2e7869 *NAMESPACE
-fb5d5c0fba42881d5d906a79743f88b8 *NEWS.md
+2eb27f56dc8d3dd6ac3002e0981b54d0 *DESCRIPTION
+5b0c137690c56b75bd1af97ed78da855 *NAMESPACE
+b075380f663a93e1498a48bc447399ec *NEWS.md
 1716f576373286178d74ed44a6ed21cd *R/bayes.R
 2ea85401300fd0487810a2833e709340 *R/glm.R
 7f15a6c3a4f96d73c0dd9f8cf498a4b3 *R/lme.R
 bcd9913a1775f03d3c6321548f461aa6 *R/reexports.R
 febd447a3e30f741c3e24ec08c0f491a *R/tf.R
 2b931a88b8077cb6a10b929c7677d5c0 *R/umap.R
-bd4acbdaefca63a772fb7a300dfce1da *R/woe.R
+251f8038e4b398d6815a51928fb861ab *R/woe.R
 5ad627db0a4417eec899847a4f07ba36 *man/add_woe.Rd
 29178f941d83f833dda164eebfb8196f *man/dictionary.Rd
 c29e44e700e69aefc5db3019cf39057a *man/reexports.Rd
@@ -25,4 +25,4 @@ c867ef34ed1e908ace8bb74fcd5e986a *man/woe_table.Rd
 7fc9467b77eab668a73058180859a03c *tests/testthat/test_pooling.R
 a51b01e73f33734644dbc343efc68dd6 *tests/testthat/test_tf.R
 1cd9f41b994d84267a117965d22e369a *tests/testthat/test_umap.R
-6259c7a448c73d1e3b9d993d1bd765e5 *tests/testthat/test_woe.R
+80a319636364b7bd06311c14ce59da61 *tests/testthat/test_woe.R

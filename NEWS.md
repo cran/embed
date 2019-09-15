@@ -1,3 +1,7 @@
+# `embed` 0.0.4
+
+Small changes for new release of `tidyr` 
+
 # `embed` 0.0.3
 
 ## New Steps
