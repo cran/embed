@@ -1,6 +1,16 @@
+# `embed` 0.0.5
+
+ * The example data are now in the `modeldata` package. 
+ 
+ * Small TF updates to `step_embed()`. 
+
+
 # `embed` 0.0.4
 
-Small changes for new release of `tidyr` 
+ * Methods were added for a future generic called `tunable()`. This outlines which parameters in a step can/could be tuned.
+
+ * Small updates to work with different versions of `tidyr`.  
+ 
 
 # `embed` 0.0.3
 

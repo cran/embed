@@ -70,7 +70,7 @@
 #' Good, I. J. (1985), "Weight of evidence: A brief survey", _Bayesian Statistics_, 2, pp.249-270.
 #'
 #' @examples
-#'
+#' library(modeldata)
 #' data("credit_data")
 #'
 #' set.seed(111)
@@ -117,7 +117,7 @@ step_woe <- function(recipe,
   if (missing(outcome)) {
     stop('argument "outcome" is missing, with no default', call. = FALSE)
   }
-
+  
   add_step(
     recipe,
     step_woe_new(
@@ -172,17 +172,17 @@ step_woe_new <- function(terms, role, trained, outcome, dictionary, Laplace, pre
 #' Good, I. J. (1985), "Weight of evidence: A brief survey", _Bayesian Statistics_, 2, pp.249-270.
 woe_table <- function(predictor, outcome, Laplace = 1e-6) {
   outcome_original_labels <- unique(outcome)
-
+  
   if (length(outcome_original_labels) != 2) {
     stop(sprintf("'outcome' must have exactly 2 categories (has %s)",
                  length(outcome_original_labels)),
          call. = FALSE)
   }
-
+  
   if (is.factor(predictor)) {
     predictor <- as.character(predictor)
   }
-
+  
   woe_expr <- parse(
     text = sprintf(
       "log(((n_%s + Laplace)/(sum(n_%s) + 2 * Laplace))/((n_%s + Laplace)/(sum(n_%s) + 2 * Laplace)))",
@@ -192,7 +192,7 @@ woe_table <- function(predictor, outcome, Laplace = 1e-6) {
       outcome_original_labels[2]
     )
   )
-
+  
   woe_tbl <-
     tibble::tibble(outcome, predictor) %>%
     dplyr::group_by(outcome, predictor) %>%
@@ -208,7 +208,7 @@ woe_table <- function(predictor, outcome, Laplace = 1e-6) {
       woe = eval(woe_expr),
       predictor = as.character(predictor)
     )
-
+  
   return(woe_tbl)
 }
 
@@ -291,7 +291,7 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
   if (missing(outcome)) {
     stop('argument "outcome" is missing, with no default', call. = FALSE)
   }
-
+  
   outcome <- rlang::enquo(outcome)
   if (is.null(dictionary)) {
     dictionary <- dictionary(.data,!!outcome, ...)
@@ -306,7 +306,7 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
       stop('column "woe" is missing in dictionary.', call. = FALSE)
     }
   }
-
+  
   # warns if there is variable with more than 50 levels
   level_counts <- table(dictionary$variable)
   purrr::walk2(
@@ -316,14 +316,14 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
       warning("Variable ", .y, " has ", .x,
               " unique values. Is this expected? In case of numeric variable, see ?step_discretize()."),
     call. = FALSE)
-
-
+  
+  
   if (missing(...)) {
     dots_vars <- names(.data)
   } else {
     dots_vars <- names(.data %>% dplyr::select(...))
   }
-
+  
   output <- dictionary %>%
     dplyr::filter(variable %in% dots_vars) %>%
     dplyr::select(variable, predictor, woe)
@@ -344,7 +344,7 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
         ) %>%
         purrr::set_names(variable)
     )
-
+  
   output <- purrr::map2(
     output$woe_table,
     output$variable, ~ {
@@ -356,7 +356,7 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
     }) %>%
     dplyr::bind_cols(.data, .) %>%
     tibble::as_tibble()
-
+  
   output
 }
 
@@ -368,14 +368,14 @@ prep.step_woe <- function(x, training, info = NULL, ...) {
   col_names <- col_names[!(col_names %in% outcome_name)]
   check_type(training[, col_names], quant = FALSE)
   check_type(training[, outcome_name], quant = FALSE)
-
+  
   if (is.null(x$dictionary)) {
     x$dictionary <- dictionary(
       .data = training[, unique(c(outcome_name, col_names))],
       outcome = !!x$outcome
     )
   }
-
+  
   step_woe_new(
     terms = x$terms,
     role = x$role,
@@ -443,4 +443,4 @@ tidyr_new_interface <- function() {
 #' @importFrom utils globalVariables
 utils::globalVariables(
   c("n", "p", "predictor", "summary_outcome", "value", "woe", "select", "variable", ".")
-  )
+)

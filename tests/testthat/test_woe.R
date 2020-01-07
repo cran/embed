@@ -1,7 +1,8 @@
-library(testthat)
-library(dplyr)
-
 context("woe")
+
+source(testthat::test_path("test_helpers.R"))
+
+# ------------------------------------------------------------------------------
 
 data("credit_data")
 
@@ -91,7 +92,7 @@ test_that("add_woe accepts only outcome with 2 distinct categories", {
   expect_error(dictionary(df %>% filter(y %in% "B"), y))
 })
 
-test_that("add_woe returns no messages nor warnings nor errors", {
+test_that("add_woe ruturns no messages nor warnings nor errors", {
   expect_silent(add_woe(df, y, x1))
   expect_silent(add_woe(df %>% mutate(x3 = rep(c(TRUE, FALSE), 10)), y, x3))
 })
