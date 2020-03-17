@@ -1,3 +1,7 @@
+# embed 0.0.6
+
+* Small changes for base R's `stringsAsFactors` change. 
+
 # `embed` 0.0.5
 
  * The example data are now in the `modeldata` package. 
