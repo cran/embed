@@ -242,7 +242,7 @@ woe_table <- function(predictor, outcome, Laplace = 1e-6) {
 #'
 #' Good, I. J. (1985), "Weight of evidence: A brief survey", _Bayesian Statistics_, 2, pp.249-270.
 #'
-#' @importFrom rlang !!
+
 #' @export
 dictionary <- function(.data, outcome, ..., Laplace = 1e-6) {
   outcome <- enquo(outcome)
@@ -278,10 +278,7 @@ dictionary <- function(.data, outcome, ..., Laplace = 1e-6) {
 #'
 #' mtcars %>% add_woe(am, cyl, gear:carb)
 #'
-#'
-#'
-#' @importFrom rlang !!
-#' @importFrom dplyr one_of
+
 #' @export
 add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
   if (missing(.data)) {
@@ -392,7 +389,6 @@ prep.step_woe <- function(x, training, info = NULL, ...) {
   )
 }
 
-#' @importFrom tibble as_tibble
 #' @export
 bake.step_woe <- function(object, new_data, ...) {
   dict <- object$dictionary
@@ -413,17 +409,19 @@ print.step_woe <- function(x, width = max(20, options()$width - 29), ...) {
   invisible(x)
 }
 
-#' @importFrom utils stack
+
 #' @rdname step_woe
 #' @param x A `step_woe` object.
 #' @export
 tidy.step_woe <- function(x, ...) {
   if (is_trained(x)) {
-    res <- x$dictionary
+    res <- 
+      x$dictionary %>% 
+      dplyr::rename(terms = variable, value = predictor)
   } else {
     term_names <- sel2char(x$terms)
-    res <- tibble(variable = term_names,
-                  predictor = rlang::na_chr,
+    res <- tibble(terms = term_names,
+                  value = rlang::na_chr,
                   ntot = rlang::na_int,
                   n_0 = rlang::na_int,
                   n_1 = rlang::na_int,
@@ -437,13 +435,8 @@ tidy.step_woe <- function(x, ...) {
 
 # ------------------------------------------------------------------------------
 
-#' @importFrom utils packageVersion
+
 tidyr_new_interface <- function() {
   utils::packageVersion("tidyr") > "0.8.99"
 }
 
-
-#' @importFrom utils globalVariables
-utils::globalVariables(
-  c("n", "p", "predictor", "summary_outcome", "value", "woe", "select", "variable", ".")
-)
