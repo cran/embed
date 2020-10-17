@@ -1,5 +1,5 @@
 Package: embed
-Version: 0.1.1
+Version: 0.1.2
 Title: Extra Recipes for Encoding Categorical Predictors
 Description: Predictors can be converted to one or more numeric representations using simple generalized linear models <arXiv:1611.09477> or nonlinear models <arXiv:1604.06737>. Most encoding methods are supervised.
 Authors@R: c(
@@ -13,14 +13,14 @@ Suggests: testthat, knitr, rmarkdown, covr, ggplot2, modeldata, rpart,
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.0.9000
+RoxygenNote: 7.1.1
 ByteCompile: true
 URL: https://embed.tidymodels.org, https://github.com/tidymodels/embed
 BugReports: https://github.com/tidymodels/embed/issues
 NeedsCompilation: no
-Packaged: 2020-07-02 18:50:26 UTC; max
+Packaged: 2020-10-17 16:50:00 UTC; max
 Author: Max Kuhn [aut, cre],
   RStudio [cph]
 Maintainer: Max Kuhn <max@rstudio.com>
 Repository: CRAN
-Date/Publication: 2020-07-03 17:00:11 UTC
+Date/Publication: 2020-10-17 17:20:02 UTC
