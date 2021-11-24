@@ -5,6 +5,7 @@
 #' @importFrom keras keras_model_sequential layer_embedding layer_flatten
 #' @importFrom keras layer_dense compile fit get_layer backend keras_model
 #' @importFrom keras layer_concatenate layer_input
+#' @importFrom lifecycle deprecated
 #' @importFrom stats as.formula glm binomial coef gaussian na.omit
 #' @importFrom stats setNames model.matrix complete.cases
 #' @importFrom purrr map
@@ -39,7 +40,27 @@ utils::globalVariables(
     "n", "p", "predictor", "summary_outcome", "value", "woe", "select", 
     "variable", ".",
     "type", "loss", "epochs", "..level", "..order",
-    "data"
+    "data", "n_tot"
     )
   )
 
+# from recipes
+is_tune <- function (x)  {
+  if (is.call(x)) {
+    if (rlang::call_name(x) == "tune") {
+      return(TRUE)
+    }
+    else {
+      return(FALSE)
+    }
+  }
+  else {
+    return(FALSE)
+  }
+  FALSE
+}
+
+prop2int <- function (x, p) {
+  cuts <- seq(0, p, length.out = p + 1)
+  as.integer(cut(x * p, breaks = cuts, include.lowest = TRUE))
+}

@@ -4,38 +4,13 @@
 #'  convert nominal data (e.g. character or factors) into one or more numeric
 #'  binary columns using the levels of the original data.
 #'
-#' @param recipe A recipe object. The step will be added to the sequence of
-#'  operations for this recipe.
-#' @param trained A logical to indicate if the quantities for preprocessing
-#'  have been estimated.
-#' @param skip A logical. Should the step be skipped when the recipe is baked
-#'  by [recipes::bake.recipe()]? While all operations are baked when
-#'  [recipes::prep.recipe()] is run, some operations may not be able to be
-#'  conducted on new data (e.g. processing the outcome variable(s)). Care should
-#'  be taken when using `skip = TRUE` as it may affect the computations for
-#'  subsequent operations.
-#' @param id A character string that is unique to this step to identify it. 
-#' @param ... One or more selector functions to choose which _factor_
-#'  variables will be used to create the dummy variables. See [selections()] for
-#'  more details. The selected variables must be factors. For the `tidy` method,
-#'  these are not currently used.
-#' @param role For model terms created by this step, what analysis role should
-#'  they be assigned?. By default, the function assumes that the binary dummy
-#'  variable columns created by the original variables will be used as
-#'  predictors in a model.
+#' @inheritParams recipes::step_pca
 #' @param num_hash The number of resulting dummy variable columns.
-#' @param preserve A single logical; should the selected column(s) be retained
-#'  (in addition to the new dummy variables)?
+#' @param preserve Use `keep_original_cols` instead to specify whether the 
+#' selected column(s) should be retained in addition to the new dummy variables.
 #' @param columns A character vector for the selected columns. This is `NULL` 
 #'  until the step is trained by [recipes::prep.recipe()].
-#' @return An updated version of `recipe` with the new step added to the
-#'  sequence of existing steps (if any). For the `tidy` method, a tibble with
-#'  columns `terms` (the selectors or original variables selected).
-#' @keywords datagen
-#' @concept preprocessing
-#' @concept dummy_variables
-#' @concept model_specification
-#' @concept variable_encodings
+#' @template step-return
 #' @export
 #' @details `step_feature_hash()` will create a set of binary dummy variables
 #'  from a factor or character variable. The values themselves are used to
@@ -63,23 +38,24 @@
 #' @seealso [recipes::step_dummy()], [recipes::step_zv()]
 #' @examples
 #' \donttest{
-#' data(okc, package = "modeldata")
+#' data(grants, package = "modeldata")
 #' 
 #' if (is_tf_available()) {
 #'   # This may take a while: 
-#'   rec <- 
-#'     recipe(Class ~ age + location, data = okc) %>%
-#'     step_feature_hash(location, num_hash = 2^6, preserve = TRUE) %>% 
+#'   rec <-
+#'     recipe(class ~ sponsor_code, data = grants_other) %>%
+#'     step_feature_hash(sponsor_code, num_hash = 2^6, keep_original_cols = TRUE) %>%
 #'     prep()
 #' 
-#'   # How many of the 135 locations ended up in each hash column?
-#'   results <- 
-#'     juice(rec, starts_with("location")) %>% 
-#'     distinct() 
+#'   # How many of the 298 locations ended up in each hash column?
+#'   results <-
+#'     bake(rec, new_data = NULL, starts_with("sponsor_code")) %>%
+#'     distinct()
 #' 
-#'   apply(results %>% select(-location), 2, sum) %>% table()
+#'   apply(results %>% select(-sponsor_code), 2, sum) %>% table()
 #' }
 #' }
+
 
 step_feature_hash <-
   function(recipe,
@@ -87,10 +63,21 @@ step_feature_hash <-
            role = "predictor",
            trained = FALSE,
            num_hash = 2^6,
-           preserve = FALSE,
+           preserve = deprecated(),
            columns = NULL,
+           keep_original_cols = FALSE,
            skip = FALSE,
            id = rand_id("feature_hash")) {
+    
+    if (lifecycle::is_present(preserve)) {
+      lifecycle::deprecate_soft(
+        "0.1.5",
+        "step_feature_hash(preserve = )",
+        "step_feature_hash(keep_original_cols = )"
+      )
+      keep_original_cols <- preserve
+    }
+    
     # warm start for tf to avoid a bug in tensorflow
     is_tf_available()
     
@@ -101,8 +88,9 @@ step_feature_hash <-
         role = role,
         trained = trained,
         num_hash = num_hash,
-        preserve = preserve,
+        preserve = keep_original_cols,
         columns = columns,
+        keep_original_cols = keep_original_cols,
         skip = skip,
         id = id
       )
@@ -110,7 +98,8 @@ step_feature_hash <-
   }
 
 step_feature_hash_new <-
-  function(terms, role, trained, num_hash, preserve, columns, skip, id) {
+  function(terms, role, trained, num_hash, preserve, columns, 
+           keep_original_cols, skip, id) {
     step(
       subclass = "feature_hash",
       terms = terms,
@@ -119,20 +108,19 @@ step_feature_hash_new <-
       num_hash = num_hash,
       preserve = preserve,
       columns = columns,
+      keep_original_cols = keep_original_cols,
       skip = skip,
       id = id
     )
   }
 
-passover <- function(cmd) {
-  # cat("`step_feature_hash()` was not able to select any columns. ",
-  #     "No dummy variables will be created.\n")
-} # figure out how to return a warning() without exiting
-
 #' @export
 prep.step_feature_hash <- function(x, training, info = NULL, ...) {
-  col_names <- terms_select(x$terms, info = info, empty_fun = passover)
-  check_type(training[, col_names], quant = FALSE)
+  col_names <- recipes::recipes_eval_select(x$terms, training, info)
+  
+  if (length(col_names) > 0) {
+    check_type(training[, col_names], quant = FALSE)
+  }
   
   step_feature_hash_new(
     terms = x$terms,
@@ -141,6 +129,7 @@ prep.step_feature_hash <- function(x, training, info = NULL, ...) {
     num_hash = x$num_hash,
     preserve = x$preserve,
     columns = col_names,
+    keep_original_cols = recipes::get_keep_original_cols(x),
     skip = x$skip,
     id = x$id
   )
@@ -212,7 +201,8 @@ bake.step_feature_hash <- function(object, new_data, ...) {
       )
     )
   
-  if (!object$preserve) {
+  keep_original_cols <- get_keep_original_cols(object)
+  if (!keep_original_cols) {
     new_data <- new_data %>% dplyr::select(-one_of(!!!object$columns))
   }
   

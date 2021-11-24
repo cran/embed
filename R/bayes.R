@@ -88,12 +88,15 @@
 #' library(dplyr)
 #' library(modeldata)
 #' 
-#' data(okc)
+#' data(grants)
 #' 
-#' reencoded <- recipe(Class ~ age + location, data = okc) %>%
-#'   step_lencode_bayes(location, outcome = vars(Class))
+#' set.seed(1)
+#' grants_other <- sample_n(grants_other, 500)
 #' 
-#' # See https://embed.tidymodels.org for examples
+#' \donttest{
+#' reencoded <- recipe(class ~ sponsor_code, data = grants_other) %>%
+#'   step_lencode_bayes(sponsor_code, outcome = vars(class))
+#' }
 
 step_lencode_bayes <-
   function(recipe,
@@ -143,12 +146,17 @@ step_lencode_bayes_new <-
 
 #' @export
 prep.step_lencode_bayes <- function(x, training, info = NULL, ...) {
-  col_names <- terms_select(x$terms, info = info)
-  check_type(training[, col_names], quant = FALSE)
-  y_name <- terms_select(x$outcome, info = info)
-  res <-
-    map(training[, col_names], stan_coefs, y = training[, y_name],
-        x$options, x$verbose)
+  col_names <- recipes::recipes_eval_select(x$terms, training, info)
+  if (length(col_names) > 0) {
+    check_type(training[, col_names], quant = FALSE)
+    y_name <- recipes::recipes_eval_select(x$outcome, training, info)
+    res <-
+      map(training[, col_names], stan_coefs, y = training[, y_name],
+          x$options, x$verbose)
+  } else {
+    res <- list()
+  }
+  
   step_lencode_bayes_new(
     terms = x$terms,
     role = x$role,

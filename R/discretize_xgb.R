@@ -35,13 +35,7 @@
 #'  conducted on new data (e.g. processing the outcome variable(s)).
 #'  Care should be taken when using `skip = TRUE` as it may affect
 #'  the computations for subsequent operations
-#' @return An updated version of `recipe` with the new step added to the
-#'  sequence of existing steps (if any).
-#' @keywords binning
-#' @concept preprocessing
-#' @concept xgboost
-#' @concept discretization
-#' @concept factors
+#' @template step-return
 #' @export
 #' @details `step_discretize_xgb()` creates non-uniform bins from numerical
 #'  variables by utilizing the information about the outcome variable and
@@ -80,7 +74,7 @@
 #'
 #' xgb_rec <- 
 #'   recipe(Status ~ ., data = credit_data_tr) %>%
-#'   step_medianimpute(all_numeric()) %>%
+#'   step_impute_median(all_numeric()) %>%
 #'   step_discretize_xgb(all_numeric(), outcome = "Status")
 #'
 #' if (rlang::is_installed("xgboost")) {
@@ -347,59 +341,65 @@ xgb_binning <- function(df, outcome, predictor, sample_val, learn_rate, num_brea
 #' @export
 prep.step_discretize_xgb <- function(x, training, info = NULL, ...) {
   
-  col_names <- recipes::terms_select(terms = x$terms, info = info)
-  check_type(training[, col_names])
+  col_names <- recipes::recipes_eval_select(x$terms, training, info)
   
-  y_name <- recipes::terms_select(terms = x$outcome, info = info)
-  
-  col_names <- col_names[col_names != y_name]
-  
-  test_size <- sum(complete.cases(training)) * x$sample_val
-  
-  if (floor(test_size) < 2){
-    rlang::abort(
-      paste("Too few observations in the early stopping validation set.",
-            "Consider increasing the `sample_val` parameter.")
-    )
-  }
-  
-  # Changes: check for the minimum number of unique data points in the column
-  # in order to run the step. Otherwise, take it out of col_names. I think that 
-  # num_unique = 20 is probably a good default
-  num_unique <- purrr::map_int(training[, col_names], ~ length(unique(.x)))
-  too_few <- num_unique < 20
-  if (any(too_few)) {
-    rlang::warn(
-      paste0(
-        "More than 20 unique training set values are required. ",
-        "Predictors ", paste0("'", col_names[too_few], "'", collapse = ", "),
-        " were not processed; their original values will be used."
-      )
-    )
-    col_names <- col_names[!too_few]
-  }
-  
-  rules <- vector("list", length(col_names))
-  
-  for (i in seq_along(col_names)) {
-    rules[[i]] <- xgb_binning(
-      training,
-      y_name,
-      col_names[[i]],
-      x$sample_val,
-      x$learn_rate,
-      x$num_breaks,
-      x$tree_depth,
-      x$min_n
-      )
-  }
-  
-  has_splits <- purrr::map_lgl(rules, ~ length(.x) >  0)
-  
-  rules <- rules[has_splits]
-  col_names <- col_names[has_splits]
   if (length(col_names) > 0) {
-    names(rules) <- col_names
+    
+    check_type(training[, col_names])
+    
+    y_name <- recipes::recipes_eval_select(x$outcome, training, info)
+    
+    col_names <- col_names[col_names != y_name]
+    
+    test_size <- sum(complete.cases(training)) * x$sample_val
+    
+    if (floor(test_size) < 2){
+      rlang::abort(
+        paste("Too few observations in the early stopping validation set.",
+              "Consider increasing the `sample_val` parameter.")
+      )
+    }
+    
+    # Changes: check for the minimum number of unique data points in the column
+    # in order to run the step. Otherwise, take it out of col_names. I think that 
+    # num_unique = 20 is probably a good default
+    num_unique <- purrr::map_int(training[, col_names], ~ length(unique(.x)))
+    too_few <- num_unique < 20
+    if (any(too_few)) {
+      rlang::warn(
+        paste0(
+          "More than 20 unique training set values are required. ",
+          "Predictors ", paste0("'", col_names[too_few], "'", collapse = ", "),
+          " were not processed; their original values will be used."
+        )
+      )
+      col_names <- col_names[!too_few]
+    }
+    
+    rules <- vector("list", length(col_names))
+    
+    for (i in seq_along(col_names)) {
+      rules[[i]] <- xgb_binning(
+        training,
+        y_name,
+        col_names[[i]],
+        x$sample_val,
+        x$learn_rate,
+        x$num_breaks,
+        x$tree_depth,
+        x$min_n
+      )
+    }
+    
+    has_splits <- purrr::map_lgl(rules, ~ length(.x) >  0)
+    
+    rules <- rules[has_splits]
+    col_names <- col_names[has_splits]
+    if (length(col_names) > 0) {
+      names(rules) <- col_names
+    }
+  } else {
+    rules <- list()
   }
   
   step_discretize_xgb_new(
@@ -444,7 +444,7 @@ bake.step_discretize_xgb <- function(object, new_data, ...) {
 
 #' @export
 print.step_discretize_xgb <- function(x, width = max(20, options()$width - 30), ...) {
-    cat("Discretizing variables using XgBoost ")
+    cat("Discretizing variables using xgboost ")
     recipes::printer(names(x$rules), x$terms, x$trained, width = width)
     invisible(x)
   }

@@ -15,8 +15,7 @@
 #'  role should they be assigned?. By default, the function assumes
 #'  that the embedding variables created will be used as predictors in a model.
 #' @param outcome A call to `vars` to specify which variable is
-#'  used as the outcome in the neural network. Only
-#'  numeric and two-level factors are currently supported.
+#'  used as the outcome in the neural network.
 #' @param predictors An optional call to `vars` to specify any
 #'  variables to be added as additional predictors in the neural
 #'  network. These variables should be numeric and perhaps centered
@@ -123,17 +122,18 @@
 #' 
 #' @examples
 #' library(modeldata)
-#' data(okc)
+#'
+#' data(grants)
+#' 
+#' set.seed(1)
+#' grants_other <- sample_n(grants_other, 500)
 #' 
 #' if (is_tf_available()) {
-#'   rec <- recipe(Class ~ age + location, data = okc) %>%
-#'     step_embed(location, outcome = vars(Class),
+#'   rec <- recipe(class ~ num_ci + sponsor_code, data = grants_other) %>%
+#'     step_embed(sponsor_code, outcome = vars(class),
 #'                options = embed_control(epochs = 10))
 #' }
 #' 
-#' # See https://embed.tidymodels.org  for examples
-
-
 
 step_embed <-
   function(recipe,
@@ -195,30 +195,42 @@ step_embed_new <-
 
 #' @export
 prep.step_embed <- function(x, training, info = NULL, ...) {
-  col_names <- terms_select(x$terms, info = info)
-  check_type(training[, col_names], quant = FALSE)
-  y_name <- terms_select(x$outcome, info = info)
-  if (length(x$predictors) > 0) {
-    pred_names <- terms_select(x$predictors, info = info)
-    check_type(training[, pred_names], quant = TRUE)
-  }
-  else
-    pred_names <- NULL
+  col_names <- recipes::recipes_eval_select(x$terms, training, info)
   
-  x$options <- tf_options_check(x$options)
-  res <-
-    tf_coefs2(
-      x = training[, col_names], 
-      y = training[, y_name], 
-      z = if(is.null(pred_names)) NULL else training[, pred_names],
-      opt = x$options,
-      num = x$num_terms,
-      h = x$hidden_units
-    )
-  
-  # compute epochs actuually trained for
-  epochs <- min(res$history$params$epochs, length(res$history$metrics[[1]]))
+  if (length(col_names) > 0) {
+    
+    check_type(training[, col_names], quant = FALSE)
+    y_name <- recipes::recipes_eval_select(x$outcome, training, info)
+    if (length(x$predictors) > 0) {
+      pred_names <- terms_select(x$predictors, info = info)
+      check_type(training[, pred_names], quant = TRUE)
+    } else {
+      pred_names <- NULL
+    }
+    
+    x$options <- tf_options_check(x$options)
+    res <-
+      tf_coefs2(
+        x = training[, col_names], 
+        y = training[, y_name], 
+        z = if(is.null(pred_names)) NULL else training[, pred_names],
+        opt = x$options,
+        num = x$num_terms,
+        h = x$hidden_units
+      )
+    
+    # compute epochs actually trained for
+    epochs <- min(res$history$params$epochs, length(res$history$metrics[[1]]))
+    .hist <- # TODO convert to pivot and get signature for below
+      as_tibble(res$history$metrics) %>%
+      mutate(epochs = 1:epochs) %>%
+      tidyr::pivot_longer(c(-epochs), names_to = "type", values_to = "loss")
 
+  } else {
+    res <- NULL
+    .hist <- tibble::tibble(epochs = integer(0), type = character(0), loss = numeric(0))
+  }
+  
   step_embed_new(
     terms = x$terms,
     role = x$role,
@@ -229,10 +241,7 @@ prep.step_embed <- function(x, training, info = NULL, ...) {
     hidden_units = x$hidden_units,
     options = x$options,
     mapping = res$layer_values,
-    history = 
-      as_tibble(res$history$metrics) %>%
-      mutate(epochs = 1:epochs) %>%
-      gather(type, loss, -epochs),
+    history = .hist,
     skip = x$skip,
     id = x$id
   )

@@ -305,22 +305,7 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
       rlang::abort('column "woe" is missing in dictionary.')
     }
   }
-  
-  # warns if there is variable with more than 50 levels
-  level_counts <- table(dictionary$variable)
-  purrr::walk2(
-    level_counts,
-    names(level_counts),
-    ~ if(.x > 50)
-      rlang::warn(
-        paste0(
-          "Variable ", .y, " has ", .x,
-          " unique values. Is this expected? In case of numeric variable, ",
-          "see ?step_discretize().")
-        )
-  )
-  
-  
+
   if (missing(...)) {
     dots_vars <- names(.data)
   } else {
@@ -366,18 +351,38 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
 
 #' @export
 prep.step_woe <- function(x, training, info = NULL, ...) {
-  outcome_name <- terms_select(x$outcome, info = info)
-  col_names <- terms_select(x$terms, info = info)
-  col_names <- col_names[!(col_names %in% outcome_name)]
-  check_type(training[, col_names], quant = FALSE)
-  check_type(training[, outcome_name], quant = FALSE)
+  col_names <- recipes::recipes_eval_select(x$terms, training, info)
   
-  if (is.null(x$dictionary)) {
-    x$dictionary <- dictionary(
-      .data = training[, unique(c(outcome_name, col_names))],
-      outcome = outcome_name
-    ) %>% 
-      dplyr::mutate(outcome = outcome_name)
+  if (length(col_names) > 0) {
+    outcome_name <- recipes::recipes_eval_select(x$outcome, training, info)
+    
+    col_names <- col_names[!(col_names %in% outcome_name)]
+    check_type(training[, col_names], quant = FALSE)
+    check_type(training[, outcome_name], quant = FALSE)
+    
+    if (is.null(x$dictionary)) {
+      x$dictionary <- dictionary(
+        .data = training[, unique(c(outcome_name, col_names))],
+        outcome = outcome_name
+      ) %>% 
+        dplyr::mutate(outcome = outcome_name)
+    }
+    
+    n_count <- 
+      x$dictionary %>% 
+      dplyr::group_by(variable) %>% 
+      dplyr::summarize(low_n = sum(n_tot < 10))
+    
+    if (any(n_count$low_n > 0)) {
+      flagged <- n_count$variable[n_count$low_n > 0]
+      flagged <- paste0("'", unique(flagged), "'", collapse = ", ")
+      msg <- paste0("Some columns used by `step_woe()` have categories with ",
+                    "less than 10 values: ", flagged)
+      rlang::warn(msg)
+    }
+    
+  } else {
+    x$dictionary <- tibble::tibble()
   }
   
   step_woe_new(
@@ -395,6 +400,9 @@ prep.step_woe <- function(x, training, info = NULL, ...) {
 
 #' @export
 bake.step_woe <- function(object, new_data, ...) {
+  if (nrow(object$dictionary) == 0) {
+    return(new_data)
+  }
   dict <- object$dictionary
   woe_vars <- unique(dict$variable)
   new_data <- add_woe(
@@ -409,7 +417,7 @@ bake.step_woe <- function(object, new_data, ...) {
 
 #' @export
 print.step_woe <- function(x, width = max(20, options()$width - 29), ...) {
-  cat("WoE version against outcome", rlang::quo_text(x$outcome), "for ")
+  cat("WoE version against outcome", rlang::quo_text(x$outcome[[1]]), "for ")
   printer(unique(x$dictionary$variable), x$terms, x$trained, width = width)
   invisible(x)
 }

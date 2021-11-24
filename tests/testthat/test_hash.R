@@ -1,5 +1,3 @@
-context("tensorflow model, classification")
-
 source(testthat::test_path("make_example_data.R"))
 source(testthat::test_path("test_helpers.R"))
 
@@ -102,3 +100,55 @@ test_that("basic usage - character strings", {
   
 })
 
+test_that('keep_original_cols works', {
+  skip_on_cran()
+  
+  rec <- recipe(x1 ~ x3, data = ex_dat) %>% 
+    step_feature_hash(x3, num_hash = 9, keep_original_cols = TRUE)
+  
+  rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
+  hash_pred <- bake(rec_trained, new_data = new_dat, all_predictors())
+  
+  expect_equal(
+    colnames(hash_pred),
+    c("x3", paste0("x3_hash_", 1:9))
+  )
+})
+
+test_that('can prep recipes with no keep_original_cols', {
+  skip_on_cran()
+  
+  rec <- recipe(x1 ~ x3, data = ex_dat) %>% 
+    step_feature_hash(x3, num_hash = 9, keep_original_cols = TRUE)
+  
+  rec$steps[[1]]$keep_original_cols <- NULL
+
+  expect_warning(
+    rec_trained <- prep(rec, training = ex_dat, verbose = FALSE),
+    "'keep_original_cols' was added to"
+  )
+  
+  expect_error(
+    hash_pred <- bake(rec_trained, new_data = new_dat, all_predictors()),
+    NA
+  )
+  
+})
+
+
+# ------------------------------------------------------------------------------
+
+test_that("empty selections", {
+  data(ad_data, package = "modeldata")
+  expect_error(
+    rec <-
+      recipe(Class ~ Genotype + tau, data = ad_data) %>%
+      step_feature_hash(starts_with("potato")) %>% 
+      prep(),
+    regexp = NA
+  )
+  expect_equal(
+    bake(rec, new_data = NULL),
+    ad_data %>% select(Genotype, tau, Class)
+  )
+})

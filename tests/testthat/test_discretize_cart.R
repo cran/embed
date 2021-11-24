@@ -2,8 +2,6 @@ library(testthat)
 library(dplyr)
 library(rpart)
 
-context("discretize_cart")
-
 source(test_path("make_binned_data.R"))
 
 # ------------------------------------------------------------------------------
@@ -192,12 +190,34 @@ test_that("tidy method", {
 
 # ------------------------------------------------------------------------------
 
-
 test_that("printing", {
   cart_rec <-
     recipe(class ~ ., data = sim_tr_cls) %>%
     step_discretize_cart(all_predictors(), outcome = "class")
   
-  expect_output(print(cart_rec))
-  expect_output(prep(cart_rec, verbose = TRUE))
+  expect_snapshot(print(cart_rec))
+  expect_snapshot(
+    expect_warning(prep(cart_rec, verbose = TRUE),
+                   "failed to find any meaningful splits for predictor 'z'")
+  )
 })
+
+
+# ------------------------------------------------------------------------------
+
+test_that("empty selections", {
+  data(ad_data, package = "modeldata")
+  expect_error(
+    rec <-
+      recipe(Class ~ Genotype + tau, data = ad_data) %>%
+      step_discretize_cart(starts_with("potato"), outcome = "Class") %>% 
+      prep(),
+    regexp = NA
+  )
+  expect_equal(
+    bake(rec, new_data = NULL),
+    ad_data %>% select(Genotype, tau, Class)
+  )
+})
+
+

@@ -1,3 +1,20 @@
+# embed 0.1.5
+
+* Re-licensed package from GPL-2 to MIT. See [consent from copyright holders here](https://github.com/tidymodels/embed/issues/78).
+
+* The tunable parameter ranges for `step_umap()` were changed for `neighbors`, `num_comp`, and `min_dist` to prevent `uwot` segmentation faults. The step also check to see if the data dimensions are consistent with the argument values. 
+
+* Two new PCA steps were added, each using sparse techniques for estimation: `step_pca_sparse()` and `step_pca_sparse_bayes()`.
+
+* Updated to use `recipes_eval_select()` from recipes 0.1.17 (#85).
+
+* Added `prefix` argument to `step_umap()` to harmonize with other recipes steps (#93).
+
+* All embed recipe steps now officially support empty selections to be more aligned with recipes, dplyr and other packages that use tidyselect.
+
+* `step_woe()` no longer warns about high-cardinality predictors when the recipe is estimated. Instead it warns when categories have fewer than 10 data points in the training set.  (#74)
+
+
 # embed 0.1.4
 
  * Minor release with changes to test for cases when CRAN cannot get `xgboost` to work on their Solaris configuration. 

@@ -18,7 +18,9 @@ step_umap(
   epochs = NULL,
   options = list(verbose = FALSE, n_threads = 1),
   seed = sample(10^5, 2),
-  retain = FALSE,
+  prefix = "UMAP",
+  keep_original_cols = FALSE,
+  retain = deprecated(),
   object = NULL,
   skip = FALSE,
   id = rand_id("umap")
@@ -30,27 +32,26 @@ step_umap(
 \item{recipe}{A recipe object. The step will be added to the
 sequence of operations for this recipe.}
 
-\item{...}{One or more selector functions to choose variables. For
-\code{step_umap}, this indicates the variables to be encoded into a numeric
-format. Numeric and factor variables can be used. See
-\code{\link[recipes:selections]{recipes::selections()}} for more details. For the \code{tidy} method, these are
-not currently used.}
+\item{...}{One or more selector functions to choose variables
+for this step. See \code{\link[recipes:selections]{selections()}} for more details.}
 
 \item{role}{For model terms created by this step, what analysis role should
-they be assigned?. By default, the function assumes that the new embedding
-columns created by the original variables will be used as predictors in a
-model.}
+they be assigned? By default, the new columns created by this step from
+the original variables will be used as \emph{predictors} in a model.}
 
-\item{trained}{A logical to indicate if the quantities for preprocessing
-have been estimated.}
+\item{trained}{A logical to indicate if the quantities for
+preprocessing have been estimated.}
 
 \item{outcome}{A call to \code{vars} to specify which variable is
 used as the outcome in the encoding process (if any).}
 
-\item{neighbors}{An integer for the number of nearest neighbors used to construct
-the target simplicial set.}
+\item{neighbors}{An integer for the number of nearest neighbors used to
+construct the target simplicial set. If \code{neighbors} is greater than the
+number of data points, the smaller value is used.}
 
-\item{num_comp}{An integer for the number of UMAP components.}
+\item{num_comp}{An integer for the number of UMAP components. If \code{num_comp}
+is greater than the number of selected columns minus one, the smaller value
+is used.}
 
 \item{min_dist}{The effective minimum distance between embedded points.}
 
@@ -58,7 +59,7 @@ the target simplicial set.}
 process.}
 
 \item{epochs}{Number of iterations for the neighbor optimization. See
-\code{\link[uwot:umap]{uwot::umap()}} for mroe details.}
+\code{\link[uwot:umap]{uwot::umap()}} for more details.}
 
 \item{options}{A list of options to pass to \code{\link[uwot:umap]{uwot::umap()}}. The arguments
 \code{X}, \code{n_neighbors}, \code{n_components}, \code{min_dist}, \code{n_epochs}, \code{ret_model}, and
@@ -70,18 +71,25 @@ numerical methods. The default pulls from the main session's stream of
 numbers and will give reproducible results if the seed is set prior to
 calling \code{\link[=prep.recipe]{prep.recipe()}} or \code{\link[=bake.recipe]{bake.recipe()}}.}
 
-\item{retain}{A single logical for whether the original predictors should
-be kept (in addition to the new embedding variables).}
+\item{prefix}{A character string for the prefix of the resulting new
+variables. See notes below.}
+
+\item{keep_original_cols}{A logical to keep the original variables in the
+output. Defaults to \code{FALSE}.}
+
+\item{retain}{Use \code{keep_original_cols} instead to specify whether the
+original predictors should be retained along with the new embedding
+variables.}
 
 \item{object}{An object that defines the encoding. This is
 \code{NULL} until the step is trained by \code{\link[recipes:prep]{recipes::prep.recipe()}}.}
 
-\item{skip}{A logical. Should the step be skipped when the recipe is baked
-by \code{\link[recipes:bake]{recipes::bake.recipe()}}? While all operations are baked when
-\code{\link[recipes:prep]{recipes::prep.recipe()}} is run, some operations may not be able to be
-conducted on new data (e.g. processing the outcome variable(s)). Care should
-be taken when using \code{skip = TRUE} as it may affect the computations for
-subsequent operations}
+\item{skip}{A logical. Should the step be skipped when the
+recipe is baked by \code{\link[recipes:bake]{bake.recipe()}}? While all operations are baked
+when \code{\link[recipes:prep]{prep.recipe()}} is run, some operations may not be able to be
+conducted on new data (e.g. processing the outcome variable(s)).
+Care should be taken when using \code{skip = TRUE} as it may affect
+the computations for subsequent operations.}
 
 \item{id}{A character string that is unique to this step to identify it.}
 
@@ -89,9 +97,7 @@ subsequent operations}
 }
 \value{
 An updated version of \code{recipe} with the new step added to the
-sequence of existing steps (if any). For the \code{tidy} method, a tibble with a
-column called \code{terms} (the selectors or variables for embedding) is
-returned.
+sequence of any existing operations.
 }
 \description{
 \code{step_umap} creates a \emph{specification} of a recipe step that
@@ -102,10 +108,14 @@ UMAP, short for Uniform Manifold Approximation and Projection, is a nonlinear
 dimension reduction technique that finds local, low-dimensional
 representations of the data. It can be run unsupervised or supervised with
 different types of outcome data (e.g. numeric, factor, etc).
+
+The new components will have names that begin with \code{prefix} and a sequence
+of numbers. The variable names are padded with zeros. For example, if
+\code{num_comp < 10}, their names will be \code{UMAP1} - \code{UMAP9}. If \code{num_comp = 101},
+the names would be \code{UMAP001} - \code{UMAP101}.
 }
 \examples{
 library(recipes)
-library(dplyr)
 library(ggplot2)
 
 split <- seq.int(1, 150, by = 9)
@@ -123,7 +133,7 @@ supervised <-
 theme_set(theme_bw())
 
 bake(supervised, new_data = te, Species, starts_with("umap")) \%>\% 
-  ggplot(aes(x = umap_1, y = umap_2, col = Species)) + 
+  ggplot(aes(x = UMAP1, y = UMAP2, col = Species)) + 
   geom_point(alpha = .5) 
 }
 \references{
@@ -132,5 +142,3 @@ Projection for Dimension Reduction. \url{ https://arxiv.org/abs/1802.03426}.
 
 "How UMAP Works" \url{https://umap-learn.readthedocs.io/en/latest/how_umap_works.html}
 }
-\concept{preprocessing encoding}
-\keyword{datagen}

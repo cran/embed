@@ -76,13 +76,15 @@
 #' library(dplyr)
 #' library(modeldata)
 #' 
-#' data(okc)
+#' data(grants)
 #' 
-#' reencoded <- recipe(Class ~ age + location, data = okc) %>%
-#'   step_lencode_mixed(location, outcome = vars(Class))
+#' set.seed(1)
+#' grants_other <- sample_n(grants_other, 500)
 #' 
-#' # See https://embed.tidymodels.org  for examples
-
+#' \donttest{
+#' reencoded <- recipe(class ~ sponsor_code, data = grants_other) %>%
+#'   step_lencode_mixed(sponsor_code, outcome = vars(class))
+#' }
 
 step_lencode_mixed <-
   function(recipe,
@@ -128,21 +130,25 @@ step_lencode_mixed_new <-
 
 #' @export
 prep.step_lencode_mixed <- function(x, training, info = NULL, ...) {
-  col_names <- terms_select(x$terms, info = info)
-  check_type(training[, col_names], quant = FALSE)
-  y_name <- terms_select(x$outcome, info = info)
-  if (is.factor(training[[y_name]])) {
-    if (length(levels(training[[y_name]])) > 2) {
-      rlang::abort(paste0(
-        "Mixed effects methods here are only implemented for ",
-        "two-class problems."
-      )
-      )
+  col_names <- recipes::recipes_eval_select(x$terms, training, info)
+  if (length(col_names) > 0) {
+    check_type(training[, col_names], quant = FALSE)
+    y_name <- recipes::recipes_eval_select(x$outcome, training, info)
+    if (is.factor(training[[y_name]])) {
+      if (length(levels(training[[y_name]])) > 2) {
+        rlang::abort(paste0(
+          "Mixed effects methods here are only implemented for ",
+          "two-class problems."
+        )
+        )
+      }
     }
+    res <-
+      map(training[, col_names], lme_coefs, y = training[[y_name]],
+          x$options)
+  } else {
+    res <- list()
   }
-  res <-
-    map(training[, col_names], lme_coefs, y = training[[y_name]],
-        x$options)
   step_lencode_mixed_new(
     terms = x$terms,
     role = x$role,
@@ -212,7 +218,7 @@ map_lme_coef <- function(dat, mapping) {
 bake.step_lencode_mixed <- function(object, new_data, ...) {
   for (col in names(object$mapping))
     new_data[, col] <- map_lme_coef(new_data[, col], object$mapping[[col]])
-
+  
   new_data
 }
 
@@ -235,7 +241,7 @@ tidy.step_lencode_mixed <- function(x, ...) {
       x$mapping[[i]]$terms <- names(x$mapping)[i]
     res <- bind_rows(x$mapping)
     names(res) <- gsub("^\\.\\.", "", names(res))
-
+    
   } else {
     term_names <- sel2char(x$terms)
     res <- tibble(

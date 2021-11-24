@@ -1,5 +1,3 @@
-context("woe")
-
 source(testthat::test_path("test_helpers.R"))
 
 # ------------------------------------------------------------------------------
@@ -127,9 +125,9 @@ test_that("add_woe do not accept dictionary with unexpected layout", {
   expect_error(add_woe(df, outcome = "y", x1, dictionary = iris %>% mutate(variable = 1)))
 })
 
-test_that("add_woe warns user if the variable has too many levels", {
-  expect_warning(credit_data %>% add_woe("Status", Expenses))
-})
+# test_that("add_woe warns user if the variable has too many levels", {
+#   expect_warning(credit_data %>% add_woe("Status", Expenses))
+# })
 
 #------------------------------------
 # step_woe
@@ -140,10 +138,13 @@ test_that("step_woe", {
     recipe(Status ~ ., data = credit_tr) %>%
     step_woe(Job, Home, outcome = vars(Status))
 
-  woe_models <- prep(rec, training = credit_tr)
+  expect_warning(
+    woe_models <- prep(rec, training = credit_tr),
+    "less than 10 values"
+  )
 
   woe_dict <- credit_tr %>% dictionary("Status", Job, Home)
-  expect_equal(woe_dict, woe_models$steps[[1]]$dictionary)
+  expect_equal(woe_dict, woe_models$steps[[1]]$dictionary, ignore_attr = TRUE)
 
   bake_woe_output <- bake(woe_models, new_data = credit_te)
   add_woe_output <-
@@ -160,13 +161,13 @@ test_that("step_woe", {
     dplyr::rename(terms = variable, value = predictor)
 
   #
-  expect_equal(tidy_output %>% dplyr::select(-id), woe_dict_output)
+  expect_equal(tidy_output %>% dplyr::select(-id), woe_dict_output, ignore_attr = TRUE)
 
   rec_all_nominal <- recipe(Status ~ ., data = credit_tr) %>%
     step_woe(all_nominal(), outcome = vars(Status))
 
   #
-  expect_output(prep(rec_all_nominal, training = credit_tr, verbose = TRUE))
+  expect_snapshot(prep(rec_all_nominal, training = credit_tr, verbose = TRUE))
 
 
   rec_all_numeric <- recipe(Status ~ ., data = credit_tr) %>%
@@ -191,8 +192,8 @@ test_that("step_woe", {
 test_that("printing", {
   woe_extract <- recipe(Status ~ ., data = credit_tr) %>%
     step_woe(Job, Home, outcome = vars(Status))
-  expect_output(print(woe_extract))
-  expect_output(prep(woe_extract, training = credit_tr, verbose = TRUE))
+  expect_snapshot(print(woe_extract))
+  expect_snapshot(prep(woe_extract, training = credit_tr, verbose = TRUE))
 })
 
 
@@ -206,4 +207,23 @@ test_that("2-level factors", {
     prep()
   )
 })
+
+
+# ------------------------------------------------------------------------------
+
+test_that("empty selections", {
+  data(ad_data, package = "modeldata")
+  expect_error(
+    rec <-
+      recipe(Class ~ Genotype + tau, data = ad_data) %>%
+      step_woe(starts_with("potato"), outcome = "Class") %>% 
+      prep(),
+    regexp = NA
+  )
+  expect_equal(
+    bake(rec, new_data = NULL),
+    ad_data %>% select(Genotype, tau, Class)
+  )
+})
+
 

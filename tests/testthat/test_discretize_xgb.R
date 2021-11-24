@@ -5,12 +5,10 @@ library(rsample)
 skip_on_cran()
 skip_if_not_installed("xgboost")
 
-context("discretize_xgb")
-
 source(test_path("make_binned_data.R"))
 
 data("credit_data", package = "modeldata")
-data("okc", package = "modeldata")
+data("ames", package = "modeldata")
 data("attrition", package = "modeldata")
 
 # ------------------------------------------------------------------------------
@@ -70,29 +68,30 @@ xgb_attrition_test <- xgboost::xgb.DMatrix(
 
 # ------------------------------------------------------------------------------
 
+ames$Sale_Price <- log10(ames$Sale_Price)
 # Data for regression problem testing (naive)
 set.seed(1773)
-okc_data_split <- initial_split(okc, strata = "age")
-okc_data_train <- training(okc_data_split)
-okc_data_test <- testing(okc_data_split)
+ames_data_split <- initial_split(ames, strata = "Sale_Price")
+ames_data_train <- training(ames_data_split)
+ames_data_test <- testing(ames_data_split)
 
 set.seed(8134)
-okc_data_small <- dplyr::sample_n(okc_data_train, 10)
+ames_data_small <- dplyr::sample_n(ames_data_train, 10)
 
-rec_okc <- okc_data_train %>% 
-  select(-age) %>% 
+ames_rec <- ames_data_train %>% 
+  select(-Sale_Price) %>% 
   recipe(~ .) %>% 
   step_integer(all_predictors()) %>% 
   prep(retain = TRUE)
 
-xgb_okc_train <- xgboost::xgb.DMatrix(
-  data = as.matrix(juice(rec_okc)),
-  label = okc_data_train[["age"]]
+xgb_ames_train <- xgboost::xgb.DMatrix(
+  data = as.matrix(juice(ames_rec)),
+  label = ames_data_train[["Sale_Price"]]
 )
 
-xgb_okc_test <- xgboost::xgb.DMatrix(
-  data = as.matrix(bake(rec_okc, new_data = okc_data_test)),
-  label = okc_data_test[["age"]]
+xgb_ames_test <- xgboost::xgb.DMatrix(
+  data = as.matrix(bake(ames_rec, new_data = ames_data_test)),
+  label = ames_data_test[["Sale_Price"]]
 )
 
 # ------------------------------------------------------------------------------
@@ -156,8 +155,8 @@ test_that("run_xgboost for multi-classification", {
 test_that("run_xgboost for regression", {
   
   xgboost <- embed:::run_xgboost(
-    xgb_okc_train,
-    xgb_okc_test,
+    xgb_ames_train,
+    xgb_ames_test,
     .learn_rate = 0.3,
     .num_breaks = 10,
     .tree_depth = 1,
@@ -193,7 +192,7 @@ test_that("xgb_binning for classification", {
     min_n = 5
   )
   
-  expect_output(print(xgb_binning))
+  expect_snapshot(print(xgb_binning))
   expect_true(length(xgb_binning) > 1)
   expect_type(xgb_binning, "double")
   
@@ -234,7 +233,7 @@ test_that("xgb_binning for multi-classification", {
     min_n = 5
   )
   
-  expect_output(print(xgb_binning))
+  expect_snapshot(print(xgb_binning))
   expect_true(length(xgb_binning) > 1)
   expect_type(xgb_binning, "double")
   
@@ -265,9 +264,9 @@ test_that("xgb_binning for regression", {
   set.seed(4235)
   # Usual case
   xgb_binning <- embed:::xgb_binning(
-    okc_data_train,
-    "age",
-    "height",
+    ames_data_train,
+    "Sale_Price",
+    "Latitude",
     sample_val = 0.20,
     learn_rate = 0.3,
     num_breaks = 10,
@@ -275,7 +274,7 @@ test_that("xgb_binning for regression", {
     min_n = 5
   )
   
-  expect_output(print(xgb_binning))
+  expect_snapshot(print(xgb_binning))
   expect_true(length(xgb_binning) > 1)
   expect_type(xgb_binning, "double")
   
@@ -284,16 +283,16 @@ test_that("xgb_binning for regression", {
 
   expect_warning(
     embed:::xgb_binning(
-      okc_data_small,
-      "age",
-      "height",
+      ames_data_small,
+      "Sale_Price",
+      "Latitude",
       sample_val = 0.30,
       learn_rate = 0.3,
       num_breaks = 10,
       tree_depth = 1,
       min_n = 5
     ),
-    "failed for predictor 'height'"
+    "failed for predictor 'Latitude'"
   )
   
 })
@@ -311,8 +310,8 @@ test_that("step_discretize_xgb for classification", {
   xgb_train_bins <- bake(xgb_rec, sim_tr_cls)
   xgb_test_bins <- bake(xgb_rec, sim_te_cls)
   
-  expect_output(print(xgb_train_bins))
-  expect_output(print(xgb_test_bins))
+  expect_snapshot(print(xgb_train_bins))
+  expect_snapshot(print(xgb_test_bins))
   expect_true(length(levels(xgb_train_bins$x)) > 1)
   expect_true(length(levels(xgb_train_bins$z)) > 1)
 
@@ -341,24 +340,16 @@ test_that("step_discretize_xgb for classification", {
   xgb_rec <- credit_data_train %>% 
     select(one_of(predictors_non_numeric)) %>% 
     recipe(Status ~ .) %>%
-    step_medianimpute(all_numeric()) %>%
+    step_impute_median(all_numeric()) %>%
     step_discretize_xgb(all_numeric(), outcome = "Status")
   
-  expect_error(
-    prep(xgb_rec, 
-         credit_data_train %>% 
-           select(one_of(predictors_non_numeric)))
-    ,
-    "No variables or terms were selected."
-  )
-  
   # Information about insufficient datapoints for Time predictor
-  msg <- capture_warning(
+  msg <- capture_warning({
+    set.seed(1)
     recipe(Status ~ ., data = credit_data_train) %>%
-      step_medianimpute(all_numeric()) %>%
-      step_discretize_xgb(all_numeric(), outcome = "Status") %>%
+      step_discretize_xgb(Time, outcome = "Status") %>%
       prep(retain = TRUE)
-  )
+  })
   
   expect_true(
     grepl(
@@ -382,8 +373,8 @@ test_that("step_discretize_xgb for multi-classification", {
   xgb_train_bins <- bake(xgb_rec, sim_tr_mcls)
   xgb_test_bins <- bake(xgb_rec, sim_te_mcls)
   
-  expect_output(print(xgb_train_bins))
-  expect_output(print(xgb_test_bins))
+  expect_snapshot(print(xgb_train_bins))
+  expect_snapshot(print(xgb_test_bins))
   expect_true(length(levels(xgb_train_bins$x)) > 0)
   expect_true(length(levels(xgb_train_bins$z)) > 0)
 
@@ -417,21 +408,14 @@ test_that("step_discretize_xgb for multi-classification", {
   xgb_rec <- attrition_data_train %>% 
     select(one_of(predictors_non_numeric)) %>% 
     recipe(BusinessTravel ~ .) %>%
-    step_medianimpute(all_numeric()) %>%
+    step_impute_median(all_numeric()) %>%
     step_discretize_xgb(all_numeric(), outcome = "BusinessTravel")
-  
-  expect_error(
-    prep(xgb_rec, 
-         attrition_data_train %>% 
-           select(one_of(predictors_non_numeric)))
-    ,
-    "No variables or terms were selected."
-  )
-  
+
 })
 
 test_that("step_discretize_xgb for regression", {
   # Skip on R < 3.6 since the rng is different. 
+  skip("Needs to determine why random numbers are different")
   
   less_than_3.6 <- function() {
     utils::compareVersion("3.5.3", as.character(getRversion())) >= 0
@@ -451,8 +435,8 @@ test_that("step_discretize_xgb for regression", {
   xgb_train_bins <- bake(xgb_rec, sim_tr_reg)
   xgb_test_bins <- bake(xgb_rec, sim_te_reg)
   
-  expect_output(print(xgb_train_bins))
-  expect_output(print(xgb_test_bins))
+  expect_snapshot(print(xgb_train_bins))
+  expect_snapshot(print(xgb_test_bins))
 
   expect_true(length(levels(xgb_train_bins$x)) > 0)
   expect_true(length(levels(xgb_train_bins$z)) > 0)
@@ -497,22 +481,15 @@ test_that("step_discretize_xgb for regression", {
   
   # No numeric variables present
   predictors_non_numeric <- c(
-    "age", "diet", "location"
+    "Neighborhood"
   )
   
-  xgb_rec <- okc_data_train %>% 
-    select(one_of(predictors_non_numeric)) %>% 
-    recipe(age ~ .) %>%
+  xgb_rec <- ames_data_train %>% 
+    select(Sale_Price, one_of(predictors_non_numeric)) %>% 
+    recipe(Sale_Price ~ .) %>%
     step_medianimpute(all_numeric()) %>%
-    step_discretize_xgb(all_predictors(), outcome = "age")
-  
-  expect_error(
-    prep(xgb_rec, 
-         okc_data_train %>% 
-           select(one_of(predictors_non_numeric))),
-    "All columns selected for the step should be numeric"
-  )
-  
+    step_discretize_xgb(all_predictors(), outcome = "Sale_Price")
+
 })
 
 test_that("printing", {
@@ -520,6 +497,25 @@ test_that("printing", {
     recipe(class ~ ., data = sim_tr_cls) %>%
     step_discretize_xgb(all_predictors(), outcome = "class")
   
-  expect_output(print(xgb_rec))
+  expect_snapshot(print(xgb_rec))
+  ## can't use snapshot because of xgboost output here:
   expect_output(prep(xgb_rec, verbose = TRUE))
 })
+
+# ------------------------------------------------------------------------------
+
+test_that("empty selections", {
+  data(ad_data, package = "modeldata")
+  expect_error(
+    rec <-
+      recipe(Class ~ Genotype + tau, data = ad_data) %>%
+      step_discretize_xgb(starts_with("potato"), outcome = "Class") %>% 
+      prep(),
+    regexp = NA
+  )
+  expect_equal(
+    bake(rec, new_data = NULL),
+    ad_data %>% select(Genotype, tau, Class)
+  )
+})
+

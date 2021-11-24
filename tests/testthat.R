@@ -1,6 +1,4 @@
 library(testthat)
 library(embed)
 
-test_check(package = "embed")
-q("no")
-
+test_check("embed")

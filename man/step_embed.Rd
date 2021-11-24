@@ -52,8 +52,7 @@ that the embedding variables created will be used as predictors in a model.}
 preprocessing have been estimated.}
 
 \item{outcome}{A call to \code{vars} to specify which variable is
-used as the outcome in the neural network. Only
-numeric and two-level factors are currently supported.}
+used as the outcome in the neural network.}
 
 \item{predictors}{An optional call to \code{vars} to specify any
 variables to be added as additional predictors in the neural
@@ -164,15 +163,18 @@ processing.
 }
 \examples{
 library(modeldata)
-data(okc)
+
+data(grants)
+
+set.seed(1)
+grants_other <- sample_n(grants_other, 500)
 
 if (is_tf_available()) {
-  rec <- recipe(Class ~ age + location, data = okc) \%>\%
-    step_embed(location, outcome = vars(Class),
+  rec <- recipe(class ~ num_ci + sponsor_code, data = grants_other) \%>\%
+    step_embed(sponsor_code, outcome = vars(class),
                options = embed_control(epochs = 10))
 }
 
-# See https://embed.tidymodels.org  for examples
 }
 \references{
 Francois C and Allaire JJ (2018)

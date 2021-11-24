@@ -1,5 +1,3 @@
-context("umap")
-
 source(testthat::test_path("test_helpers.R"))
 
 # ------------------------------------------------------------------------------
@@ -38,7 +36,11 @@ test_that("factor outcome", {
       )
     )
   
-  expect_equal(direct_mod$embedding, supervised$steps[[1]]$object$embedding)
+  expect_equal(
+    direct_mod$embedding, 
+    supervised$steps[[1]]$object$embedding,
+    ignore_attr = TRUE
+  )
   
   # predictions:
   
@@ -50,7 +52,8 @@ test_that("factor outcome", {
   colnames(direct_pred) <- paste0("umap_", 1:2)
   expect_equal(
     direct_pred,
-    bake(supervised, new_data = te, composition = "matrix", all_predictors())
+    bake(supervised, new_data = te, composition = "matrix", all_predictors()),
+    ignore_attr = TRUE
   )
   
 })
@@ -81,7 +84,11 @@ test_that("numeric outcome", {
       )
     )
   
-  expect_equal(direct_mod$embedding, supervised$steps[[1]]$object$embedding)
+  expect_equal(
+    direct_mod$embedding, 
+    supervised$steps[[1]]$object$embedding,
+    ignore_attr = TRUE
+  )
   
   # predictions:
   
@@ -93,7 +100,8 @@ test_that("numeric outcome", {
   colnames(direct_pred) <- paste0("umap_", 1:2)
   expect_equal(
     direct_pred,
-    bake(supervised, new_data = te[, -5], composition = "matrix", all_predictors())
+    bake(supervised, new_data = te[, -5], composition = "matrix", all_predictors()),
+    ignore_attr = TRUE
   )
   
 })
@@ -122,7 +130,11 @@ test_that("no outcome", {
       )
     )
   
-  expect_equal(direct_mod$embedding, unsupervised$steps[[1]]$object$embedding)
+  expect_equal(
+    direct_mod$embedding, 
+    unsupervised$steps[[1]]$object$embedding,
+    ignore_attr = TRUE
+  )
   
   # predictions:
   
@@ -134,9 +146,65 @@ test_that("no outcome", {
   colnames(direct_pred) <- paste0("umap_", 1:3)
   expect_equal(
     direct_pred,
-    bake(unsupervised, new_data = te[, -5], composition = "matrix", all_predictors())
+    bake(unsupervised, new_data = te[, -5], composition = "matrix", all_predictors()),
+    ignore_attr = TRUE
   )
   
 })
 
+test_that('keep_original_cols works', {
+  set.seed(11)
+  unsupervised <- 
+    recipe( ~ ., data = tr[, -5]) %>%
+    step_umap(all_predictors(), num_comp = 3, min_dist = .2, learn_rate = .2, 
+              keep_original_cols = TRUE) %>% 
+    prep(training = tr[, -5])
+
+  
+  umap_pred <- bake(unsupervised, new_data = te[, -5], composition = "matrix", all_predictors())
+  
+  expect_equal(
+    colnames(umap_pred),
+    c("Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width",
+      "UMAP1", "UMAP2", "UMAP3")
+  )
+})
+
+test_that('can prep recipes with no keep_original_cols', {
+  set.seed(11)
+  unsupervised <- 
+    recipe( ~ ., data = tr[, -5]) %>%
+    step_umap(all_predictors(), num_comp = 3, min_dist = .2, learn_rate = .2)
+  
+  unsupervised$steps[[1]]$keep_original_cols <- NULL
+  
+  expect_warning(
+    umap_pred <- prep(unsupervised, training = tr[, -5], verbose = FALSE),
+    "'keep_original_cols' was added to"
+  )
+  
+  expect_error(
+    umap_pred <- bake(umap_pred, new_data = te[, -5], all_predictors()),
+    NA
+  )
+  
+})
+
+
+# ------------------------------------------------------------------------------
+
+test_that("empty selections", {
+  data(ad_data, package = "modeldata")
+  expect_error(
+    rec <-
+      recipe(Class ~ Genotype + tau, data = ad_data) %>%
+      step_umap(starts_with("potato"), outcome = vars(Class)) %>% 
+      prep(),
+    regexp = NA
+  )
+  expect_equal(
+    bake(rec, new_data = NULL),
+    ad_data %>% select(Genotype, tau, Class)
+  )
+})
 
