@@ -2,7 +2,6 @@
 % Please edit documentation in R/woe.R
 \name{step_woe}
 \alias{step_woe}
-\alias{tidy.step_woe}
 \title{Weight of evidence transformation}
 \usage{
 step_woe(
@@ -17,8 +16,6 @@ step_woe(
   skip = FALSE,
   id = rand_id("woe")
 )
-
-\method{tidy}{step_woe}(x, ...)
 }
 \arguments{
 \item{recipe}{A recipe object. The step will be added to the
@@ -53,15 +50,13 @@ Also known as 'pseudocount' parameter of the Laplace smoothing technique.}
 resulting new variables. See notes below.}
 
 \item{skip}{A logical. Should the step be skipped when the
-recipe is baked by \code{\link[recipes:bake]{recipes::bake.recipe()}}? While all operations are baked
-when \code{\link[recipes:prep]{recipes::prep.recipe()}} is run, some operations may not be able to be
+recipe is baked by \code{\link[recipes:bake]{recipes::bake()}}? While all operations are baked
+when \code{\link[recipes:prep]{recipes::prep()}} is run, some operations may not be able to be
 conducted on new data (e.g. processing the outcome variable(s)).
 Care should be taken when using \code{skip = TRUE} as it may affect
 the computations for subsequent operations}
 
 \item{id}{A character string that is unique to this step to identify it.}
-
-\item{x}{A \code{step_woe} object.}
 }
 \value{
 An updated version of \code{recipe} with the new step
@@ -105,6 +100,13 @@ want to tweak this object with the goal to fix the orders between
 the levels of one given predictor. One easy way to do this is by
 tweaking an output returned from \code{dictionary()}.
 }
+\section{Tidying}{
+When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns
+\code{terms} (the selectors or variables selected), \code{value}, \code{n_tot}, \code{n_bad},
+\code{n_good}, \code{p_bad}, \code{p_good}, \code{woe} and \code{outcome} is returned.. See
+\code{\link[=dictionary]{dictionary()}} for more information.
+}
+
 \examples{
 library(modeldata)
 data("credit_data")
@@ -112,7 +114,7 @@ data("credit_data")
 set.seed(111)
 in_training <- sample(1:nrow(credit_data), 2000)
 
-credit_tr <- credit_data[ in_training, ]
+credit_tr <- credit_data[in_training, ]
 credit_te <- credit_data[-in_training, ]
 
 rec <- recipe(Status ~ ., data = credit_tr) \%>\%
@@ -123,23 +125,26 @@ woe_models <- prep(rec, training = credit_tr)
 # the encoding:
 bake(woe_models, new_data = credit_te \%>\% slice(1:5), starts_with("woe"))
 # the original data
-credit_te \%>\% slice(1:5) \%>\% dplyr::select(Job, Home)
+credit_te \%>\%
+  slice(1:5) \%>\%
+  dplyr::select(Job, Home)
 # the details:
 tidy(woe_models, number = 1)
 
 # Example of custom dictionary + tweaking
 # custom dictionary
 woe_dict_custom <- credit_tr \%>\% dictionary(Job, Home, outcome = "Status")
-woe_dict_custom[4, "woe"] <- 1.23 #tweak
+woe_dict_custom[4, "woe"] <- 1.23 # tweak
 
-#passing custom dict to step_woe()
+# passing custom dict to step_woe()
 rec_custom <- recipe(Status ~ ., data = credit_tr) \%>\%
   step_woe(Job, Home, outcome = vars(Status), dictionary = woe_dict_custom) \%>\%
-  prep
+  prep()
 
 rec_custom_baked <- bake(rec_custom, new_data = credit_te)
-rec_custom_baked \%>\% dplyr::filter(woe_Job == 1.23) \%>\% head
-
+rec_custom_baked \%>\%
+  dplyr::filter(woe_Job == 1.23) \%>\%
+  head()
 }
 \references{
 Kullback, S. (1959). \emph{Information Theory and Statistics.} Wiley, New York.

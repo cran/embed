@@ -2,7 +2,6 @@
 % Please edit documentation in R/umap.R
 \name{step_umap}
 \alias{step_umap}
-\alias{tidy.step_umap}
 \title{Supervised and unsupervised uniform manifold approximation and projection (UMAP)}
 \usage{
 step_umap(
@@ -25,8 +24,6 @@ step_umap(
   skip = FALSE,
   id = rand_id("umap")
 )
-
-\method{tidy}{step_umap}(x, ...)
 }
 \arguments{
 \item{recipe}{A recipe object. The step will be added to the
@@ -69,7 +66,7 @@ process.}
 \item{seed}{Two integers to control the random numbers used by the
 numerical methods. The default pulls from the main session's stream of
 numbers and will give reproducible results if the seed is set prior to
-calling \code{\link[=prep.recipe]{prep.recipe()}} or \code{\link[=bake.recipe]{bake.recipe()}}.}
+calling \code{\link[=prep]{prep()}} or \code{\link[=bake]{bake()}}.}
 
 \item{prefix}{A character string for the prefix of the resulting new
 variables. See notes below.}
@@ -82,18 +79,16 @@ original predictors should be retained along with the new embedding
 variables.}
 
 \item{object}{An object that defines the encoding. This is
-\code{NULL} until the step is trained by \code{\link[recipes:prep]{recipes::prep.recipe()}}.}
+\code{NULL} until the step is trained by \code{\link[recipes:prep]{recipes::prep()}}.}
 
 \item{skip}{A logical. Should the step be skipped when the
-recipe is baked by \code{\link[recipes:bake]{bake.recipe()}}? While all operations are baked
-when \code{\link[recipes:prep]{prep.recipe()}} is run, some operations may not be able to be
+recipe is baked by \code{\link[recipes:bake]{bake()}}? While all operations are baked
+when \code{\link[recipes:prep]{prep()}} is run, some operations may not be able to be
 conducted on new data (e.g. processing the outcome variable(s)).
 Care should be taken when using \code{skip = TRUE} as it may affect
 the computations for subsequent operations.}
 
 \item{id}{A character string that is unique to this step to identify it.}
-
-\item{x}{A \code{step_umap} object.}
 }
 \value{
 An updated version of \code{recipe} with the new step added to the
@@ -114,27 +109,32 @@ of numbers. The variable names are padded with zeros. For example, if
 \code{num_comp < 10}, their names will be \code{UMAP1} - \code{UMAP9}. If \code{num_comp = 101},
 the names would be \code{UMAP001} - \code{UMAP101}.
 }
+\section{Tidying}{
+When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns
+\code{terms} (the selectors or variables selected) is returned.
+}
+
 \examples{
 library(recipes)
 library(ggplot2)
 
 split <- seq.int(1, 150, by = 9)
 tr <- iris[-split, ]
-te <- iris[ split, ]
+te <- iris[split, ]
 
 set.seed(11)
-supervised <- 
+supervised <-
   recipe(Species ~ ., data = tr) \%>\%
-  step_center(all_predictors()) \%>\% 
-  step_scale(all_predictors()) \%>\% 
-  step_umap(all_predictors(), outcome = vars(Species), num_comp = 2) \%>\% 
+  step_center(all_predictors()) \%>\%
+  step_scale(all_predictors()) \%>\%
+  step_umap(all_predictors(), outcome = vars(Species), num_comp = 2) \%>\%
   prep(training = tr)
 
 theme_set(theme_bw())
 
-bake(supervised, new_data = te, Species, starts_with("umap")) \%>\% 
-  ggplot(aes(x = UMAP1, y = UMAP2, col = Species)) + 
-  geom_point(alpha = .5) 
+bake(supervised, new_data = te, Species, starts_with("umap")) \%>\%
+  ggplot(aes(x = UMAP1, y = UMAP2, col = Species)) +
+  geom_point(alpha = .5)
 }
 \references{
 McInnes, L., & Healy, J. (2018). UMAP: Uniform Manifold Approximation and

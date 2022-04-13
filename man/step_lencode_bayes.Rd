@@ -2,7 +2,6 @@
 % Please edit documentation in R/bayes.R
 \name{step_lencode_bayes}
 \alias{step_lencode_bayes}
-\alias{tidy.step_lencode_bayes}
 \title{Supervised Factor Conversions into Linear Functions using Bayesian Likelihood Encodings}
 \usage{
 step_lencode_bayes(
@@ -17,8 +16,6 @@ step_lencode_bayes(
   skip = FALSE,
   id = rand_id("lencode_bayes")
 )
-
-\method{tidy}{step_lencode_bayes}(x, ...)
 }
 \arguments{
 \item{recipe}{A recipe object. The step will be added to the
@@ -46,18 +43,16 @@ numeric and two-level factors are currently supported.}
 
 \item{mapping}{A list of tibble results that define the
 encoding. This is \code{NULL} until the step is trained by
-\code{\link[recipes:prep]{recipes::prep.recipe()}}.}
+\code{\link[recipes:prep]{recipes::prep()}}.}
 
 \item{skip}{A logical. Should the step be skipped when the
-recipe is baked by \code{\link[recipes:bake]{recipes::bake.recipe()}}? While all operations are baked
-when \code{\link[recipes:prep]{recipes::prep.recipe()}} is run, some operations may not be able to be
+recipe is baked by \code{\link[recipes:bake]{recipes::bake()}}? While all operations are baked
+when \code{\link[recipes:prep]{recipes::prep()}} is run, some operations may not be able to be
 conducted on new data (e.g. processing the outcome variable(s)).
 Care should be taken when using \code{skip = TRUE} as it may affect
 the computations for subsequent operations}
 
 \item{id}{A character string that is unique to this step to identify it.}
-
-\item{x}{A \code{step_lencode_bayes} object.}
 }
 \value{
 An updated version of \code{recipe} with the new step added
@@ -89,12 +84,18 @@ A hierarchical generalized linear model is fit using
 }
 
 where the \code{...} include the \code{family} argument (automatically
-set by the step) as well as any arguments given to the \code{options}
-argument to the step. Relevant options include \code{chains}, \code{iter},
-\code{cores}, and arguments for the priors (see the links in the
-References below). \code{prior_intercept} is the argument that has the
+set by the step, unless passed in by \code{options}) as well as any arguments
+given to the \code{options} argument to the step. Relevant options include
+\code{chains}, \code{iter}, \code{cores}, and arguments for the priors (see the links
+in the References below). \code{prior_intercept} is the argument that has the
 most effect on the amount of shrinkage.
 }
+\section{Tidying}{
+When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns
+\code{terms} (the selectors or variables selected), \code{value} and \code{component} is
+returned.
+}
+
 \examples{
 library(recipes)
 library(dplyr)
@@ -104,7 +105,6 @@ data(grants)
 
 set.seed(1)
 grants_other <- sample_n(grants_other, 500)
-
 \donttest{
 reencoded <- recipe(class ~ sponsor_code, data = grants_other) \%>\%
   step_lencode_bayes(sponsor_code, outcome = vars(class))

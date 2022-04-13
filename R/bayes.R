@@ -2,8 +2,8 @@
 #'
 #' `step_lencode_bayes` creates a *specification* of a recipe step that
 #'  will convert a nominal (i.e. factor) predictor into a single set of
-#'  scores derived from a generalized linear model estimated using 
-#'  Bayesian analysis. 
+#'  scores derived from a generalized linear model estimated using
+#'  Bayesian analysis.
 #'
 #' @param recipe A recipe object. The step will be added to the
 #'  sequence of operations for this recipe.
@@ -17,14 +17,14 @@
 #'  used as the outcome in the generalized linear model. Only
 #'  numeric and two-level factors are currently supported.
 #' @param options A list of options to pass to [rstanarm::stan_glmer()].
-#' @param verbose A logical to control the default printing by 
+#' @param verbose A logical to control the default printing by
 #'  [rstanarm::stan_glmer()].
 #' @param mapping A list of tibble results that define the
 #'  encoding. This is `NULL` until the step is trained by
-#'  [recipes::prep.recipe()].
+#'  [recipes::prep()].
 #' @param skip A logical. Should the step be skipped when the
-#'  recipe is baked by [recipes::bake.recipe()]? While all operations are baked
-#'  when [recipes::prep.recipe()] is run, some operations may not be able to be
+#'  recipe is baked by [recipes::bake()]? While all operations are baked
+#'  when [recipes::prep()] is run, some operations may not be able to be
 #'  conducted on new data (e.g. processing the outcome variable(s)).
 #'  Care should be taken when using `skip = TRUE` as it may affect
 #'  the computations for subsequent operations
@@ -36,7 +36,7 @@
 #'  method, a tibble with columns `terms` (the selectors or
 #'  variables for encoding), `level` (the factor levels), and
 #'  `value` (the encodings).
-#' @keywords datagen 
+#' @keywords datagen
 #' @concept preprocessing encoding
 #' @export
 #' @details For each factor predictor, a generalized linear model
@@ -47,57 +47,60 @@
 #'  two factor outcomes are used, the log-odds reflect the event of
 #'  interest being the _first_ level of the factor.
 #'
-#' For novel levels, a slightly timmed average of the coefficients 
+#' For novel levels, a slightly timmed average of the coefficients
 #'  is returned.
-#' 
-#' A hierarchical generalized linear model is fit using 
+#'
+#' A hierarchical generalized linear model is fit using
 #'  [rstanarm::stan_glmer()] and no intercept via
-#'  
+#'
 #' ```
 #'   stan_glmer(outcome ~ (1 | predictor), data = data, ...)
 #' ```
-#' 
+#'
 #' where the `...` include the `family` argument (automatically
-#'  set by the step) as well as any arguments given to the `options`
-#'  argument to the step. Relevant options include `chains`, `iter`,
-#'  `cores`, and arguments for the priors (see the links in the 
-#'  References below). `prior_intercept` is the argument that has the 
-#'  most effect on the amount of shrinkage. 
+#'  set by the step, unless passed in by `options`) as well as any arguments 
+#'  given to the `options` argument to the step. Relevant options include 
+#'  `chains`, `iter`, `cores`, and arguments for the priors (see the links 
+#'  in the References below). `prior_intercept` is the argument that has the
+#'  most effect on the amount of shrinkage.
 #' 
+#' # Tidying
 #' 
-#' @references 
-#' Micci-Barreca D (2001) "A preprocessing scheme for 
-#'  high-cardinality categorical attributes in classification and 
+#' When you [`tidy()`][tidy.recipe()] this step, a tibble with columns
+#' `terms` (the selectors or variables selected), `value` and `component` is
+#' returned.
+#'
+#' @references
+#' Micci-Barreca D (2001) "A preprocessing scheme for
+#'  high-cardinality categorical attributes in classification and
 #'  prediction problems," ACM SIGKDD Explorations Newsletter, 3(1),
 #'  27-32.
-#'  
-#' Zumel N and Mount J (2017) "vtreat: a data.frame Processor for 
+#'
+#' Zumel N and Mount J (2017) "vtreat: a data.frame Processor for
 #'  Predictive Modeling," arXiv:1611.09477
-#'  
-#' "Hierarchical Partial Pooling for Repeated Binary Trials" 
+#'
+#' "Hierarchical Partial Pooling for Repeated Binary Trials"
 #'  \url{https://tinyurl.com/stan-pooling}
-#'  
-#' "Prior Distributions for `rstanarm`` Models"  
+#'
+#' "Prior Distributions for `rstanarm`` Models"
 #'  \url{https://tinyurl.com/stan-priors}
-#'  
-#' "Estimating Generalized (Non-)Linear Models with Group-Specific 
+#'
+#' "Estimating Generalized (Non-)Linear Models with Group-Specific
 #' Terms with `rstanarm`" \url{https://tinyurl.com/stan-glm-grouped}
-#' 
+#'
 #' @examples
 #' library(recipes)
 #' library(dplyr)
 #' library(modeldata)
-#' 
+#'
 #' data(grants)
-#' 
+#'
 #' set.seed(1)
 #' grants_other <- sample_n(grants_other, 500)
-#' 
 #' \donttest{
 #' reencoded <- recipe(class ~ sponsor_code, data = grants_other) %>%
 #'   step_lencode_bayes(sponsor_code, outcome = vars(class))
 #' }
-
 step_lencode_bayes <-
   function(recipe,
            ...,
@@ -109,8 +112,9 @@ step_lencode_bayes <-
            mapping = NULL,
            skip = FALSE,
            id = rand_id("lencode_bayes")) {
-    if (is.null(outcome))
+    if (is.null(outcome)) {
       rlang::abort("Please list a variable in `outcome`")
+    }
     add_step(
       recipe,
       step_lencode_bayes_new(
@@ -151,12 +155,14 @@ prep.step_lencode_bayes <- function(x, training, info = NULL, ...) {
     check_type(training[, col_names], quant = FALSE)
     y_name <- recipes::recipes_eval_select(x$outcome, training, info)
     res <-
-      map(training[, col_names], stan_coefs, y = training[, y_name],
-          x$options, x$verbose)
+      map(training[, col_names], stan_coefs,
+        y = training[, y_name],
+        x$options, x$verbose
+      )
   } else {
     res <- list()
   }
-  
+
   step_lencode_bayes_new(
     terms = x$terms,
     role = x$role,
@@ -170,47 +176,27 @@ prep.step_lencode_bayes <- function(x, training, info = NULL, ...) {
   )
 }
 
-
-glm_coefs <- function(x, y, ...) {
-  fam <- if(is.factor(y[[1]])) binomial else gaussian
-  form <- as.formula(paste0(names(y), "~ 0 + value"))
-  mod <-
-    glm(
-      form,
-      data = bind_cols(as_tibble(x), y),
-      family = fam,
-      na.action = na.omit,
-      ...
-    )
-  
-  coefs <- coef(mod)
-  names(coefs) <- gsub("^value", "", names(coefs))
-  mean_coef <- mean(coefs, na.rm = TRUE, trim = .1)
-  coefs[is.na(coefs)] <- mean_coef
-  coefs <- c(coefs, ..new = mean_coef)
-  if(is.factor(y[[1]]))
-    coefs <- -coefs
-  tibble(
-    ..level = names(coefs),
-    ..value = unname(coefs)
-  )
-}
-
 stan_coefs <- function(x, y, options, verbose, ...) {
   rlang::check_installed("rstanarm")
-  if (is.factor(y[[1]])) {
-    fam <- binomial()
+  if (is.null(options$family)) {
+    if (is.factor(y[[1]])) {
+      fam <- binomial()
+    } else {
+      fam <- gaussian()
+    }
   } else {
-    fam <- gaussian()
+    fam <- options$family
+    options$family <- NULL
   }
-  form <- as.formula(paste0(names(y), "~ (1|value)"))
   
+  form <- as.formula(paste0(names(y), "~ (1|value)"))
+
   if (is.vector(x) | is.factor(x)) {
     x <- tibble(value = x)
   } else {
     x <- as_tibble(x)
   }
-  
+
   args <-
     list(
       form,
@@ -221,15 +207,15 @@ stan_coefs <- function(x, y, options, verbose, ...) {
   if (length(options) > 0) {
     args <- c(args, options)
   }
-  
+
   cl <- rlang::call2("stan_glmer", .ns = "rstanarm", !!!args)
-  
+
   if (!verbose) {
     junk <- capture.output(mod <- rlang::eval_tidy(cl))
   } else {
     mod <- rlang::eval_tidy(cl)
   }
-  
+
   coefs <- coef(mod)$value
   coefs <- as.data.frame(coefs)
   coefs <- set_names(coefs, "..value")
@@ -239,32 +225,17 @@ stan_coefs <- function(x, y, options, verbose, ...) {
   coefs$..value[is.na(coefs$..value)] <- mean_coef
   new_row <- tibble(..level = "..new", ..value = mean_coef)
   coefs <- bind_rows(coefs, new_row)
-  if (is.factor(y[[1]]))
+  if (is.factor(y[[1]])) {
     coefs$..value <- -coefs$..value
+  }
   coefs
 }
 
-
-map_glm_coef <- function(dat, mapping) {
-  new_val <- mapping$..value[mapping$..level == "..new"]
-  dat <- 
-    dat %>% 
-    mutate(..order = 1:nrow(dat)) %>%
-    set_names(c("..level", "..order")) %>%
-    mutate(..level = as.character(..level))
-  mapping <- mapping %>% dplyr::filter(..level != "..new")
-  dat <- 
-    left_join(dat, mapping, by = "..level") %>%
-    arrange(..order)
-  dat$..value[is.na(dat$..value)] <- new_val
-  dat$..value
-}
-
-
 #' @export
 bake.step_lencode_bayes <- function(object, new_data, ...) {
-  for (col in names(object$mapping))
+  for (col in names(object$mapping)) {
     new_data[, col] <- map_glm_coef(new_data[, col], object$mapping[[col]])
+  }
 
   new_data
 }
@@ -273,23 +244,22 @@ bake.step_lencode_bayes <- function(object, new_data, ...) {
 #' @export
 print.step_lencode_bayes <-
   function(x, width = max(20, options()$width - 31), ...) {
-    cat("Linear embedding for factors via Bayesian GLM for ", sep = "")
-    printer(names(x$mapping), x$terms, x$trained, width = width)
+    title <- "Linear embedding for factors via Bayesian GLM for "
+    print_step(names(x$mapping), x$terms, x$trained, title, width)
     invisible(x)
   }
 
 
-#' @rdname step_lencode_bayes
+#' @rdname tidy.recipe
 #' @param x A `step_lencode_bayes` object.
 #' @export
-#' @export tidy.step_lencode_bayes
 tidy.step_lencode_bayes <- function(x, ...) {
   if (is_trained(x)) {
-    for(i in seq_along(x$mapping))
+    for (i in seq_along(x$mapping)) {
       x$mapping[[i]]$terms <- names(x$mapping)[i]
+    }
     res <- bind_rows(x$mapping)
     names(res) <- gsub("^\\.\\.", "", names(res))
-
   } else {
     term_names <- sel2char(x$terms)
     res <- tibble(
@@ -305,7 +275,7 @@ tidy.step_lencode_bayes <- function(x, ...) {
 #' S3 methods for tracking which additional packages are needed for steps.
 #'
 #' Recipe-adjacent packages always list themselves as a required package so that
-#' the steps can function properly within parallel processing schemes. 
+#' the steps can function properly within parallel processing schemes.
 #' @param x A recipe step
 #' @return A character vector
 #' @rdname required_pkgs.embed
@@ -313,5 +283,4 @@ tidy.step_lencode_bayes <- function(x, ...) {
 #' @export
 required_pkgs.step_lencode_bayes <- function(x, ...) {
   c("rstanarm", "embed")
-} 
-
+}
