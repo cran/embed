@@ -250,13 +250,24 @@ test_that("bad args", {
   )
 })
 
+test_that("bake method errors when needed non-standard role columns are missing", {
+  rec <- recipe(x2 ~ ., data = ex_dat) %>%
+    step_lencode_mixed(x3, outcome = vars(x2)) %>%
+    update_role(x3, new_role = "potato") %>%
+    update_role_requirements(role = "potato", bake = FALSE)
+  
+  rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
+  
+  expect_error(bake(rec_trained, new_data = ex_dat[, -3]),
+               class = "new_data_missing_column")
+})
 
 test_that("printing", {
   skip_if_not_installed("lme4")
   print_test <- recipe(x2 ~ ., data = ex_dat_ch) %>%
     step_lencode_mixed(x3, outcome = vars(x2))
   expect_snapshot(print_test)
-  expect_snapshot(prep(print_test, training = ex_dat_ch, verbose = TRUE))
+  expect_snapshot(prep(print_test))
 })
 
 # ------------------------------------------------------------------------------
@@ -275,3 +286,35 @@ test_that("empty selections", {
     ad_data %>% select(Genotype, tau, Class)
   )
 })
+
+# ------------------------------------------------------------------------------
+
+test_that("case weights", {
+  skip_if_not_installed("lme4")
+  
+  wts_int <- rep(c(0, 1), times = c(100, 400))
+  
+  ex_dat_cw <- ex_dat %>%
+    mutate(wts = importance_weights(wts_int))
+  
+  class_test <- recipe(x2 ~ ., data = ex_dat_cw) %>%
+    step_lencode_mixed(x3, outcome = vars(x2), id = "id") %>%
+    prep(training = ex_dat_cw, retain = TRUE)
+  
+  ref_mod <- lme4::glmer(
+    formula = y ~ 1 + (1 | x3),
+    data = ex_dat_cw %>% mutate(y = as.numeric(x2) - 1), 
+    family = stats::binomial,
+    verbose = 0,
+    na.action = na.omit,
+    weights = wts_int
+  )
+
+  expect_equal(
+    -coef(ref_mod)$x3[[1]],
+    slice_head(class_test$steps[[1]]$mapping$x3, n = -1)$..value
+  )
+  
+  expect_snapshot(class_test)
+})
+

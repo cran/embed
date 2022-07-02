@@ -71,15 +71,11 @@
 ---
 
     Code
-      prep(cart_rec, verbose = TRUE)
-    Output
-      oper 1 step discretize cart [training] 
+      prep(cart_rec)
     Condition
       Warning:
       `step_discretize_cart()` failed to find any meaningful splits for predictor 'z', which will not be binned.
     Output
-      The retained training set is ~ 0.02 Mb  in memory.
-      
       Recipe
       
       Inputs:
@@ -93,4 +89,39 @@
       Operations:
       
       Discretizing variables using CART x [trained]
+
+# case weights step functions
+
+    Code
+      cart_rec <- recipe(class ~ ., data = sim_tr_cls_cw) %>% step_discretize_cart(
+        all_predictors(), outcome = "class") %>% prep()
+    Condition
+      Warning:
+      `step_discretize_cart()` failed to find any meaningful splits for predictor 'z', which will not be binned.
+
+---
+
+    Code
+      cart_rec <- recipe(y ~ ., data = sim_tr_reg_cw) %>% step_discretize_cart(
+        all_predictors(), outcome = "y") %>% prep()
+
+---
+
+    Code
+      cart_rec
+    Output
+      Recipe
+      
+      Inputs:
+      
+               role #variables
+       case_weights          1
+            outcome          1
+          predictor          2
+      
+      Training data contained 1000 data points and no missing data.
+      
+      Operations:
+      
+      Discretizing variables using CART x, z [weighted, trained]
 

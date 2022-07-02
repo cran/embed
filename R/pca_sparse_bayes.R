@@ -73,6 +73,8 @@
 #' When you [`tidy()`][tidy.recipe()] this step, a tibble with columns
 #' `terms` (the selectors or variables selected), `value` and `component` is
 #' returned.
+#'  
+#' @template case-weights-not-supported
 #'
 #' @seealso [step_pca_sparse()]
 #' @examples
@@ -215,6 +217,8 @@ prep.step_pca_sparse_bayes <- function(x, training, info = NULL, ...) {
 bake.step_pca_sparse_bayes <- function(object, new_data, ...) {
   if (!all(is.na(object$res))) {
     pca_vars <- rownames(object$res)
+    check_new_data(pca_vars, object, new_data)
+    
     x <- as.matrix(new_data[, pca_vars])
     comps <- x %*% object$res
     comps <- check_name(comps, new_data, object)
@@ -225,7 +229,7 @@ bake.step_pca_sparse_bayes <- function(object, new_data, ...) {
       new_data <- new_data[, !(colnames(new_data) %in% pca_vars), drop = FALSE]
     }
   }
-  as_tibble(new_data)
+  new_data
 }
 
 #' @export

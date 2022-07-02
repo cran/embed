@@ -116,6 +116,8 @@
 #' When you [`tidy()`][tidy.recipe()] this step, a tibble with columns
 #' `terms` (the selectors or variables selected), `levels` (levels in variable),
 #' and a number of columns with embedding information are returned.
+#' 
+#' @template case-weights-not-supported
 #'
 #' @references Francois C and Allaire JJ (2018)
 #' _Deep Learning with R_, Manning
@@ -412,6 +414,8 @@ map_tf_coef2 <- function(dat, mapping, prefix) {
 
 #' @export
 bake.step_embed <- function(object, new_data, ...) {
+  check_new_data(names(object$mapping), object, new_data)
+  
   for (col in names(object$mapping)) {
     tmp <- map_tf_coef2(new_data[, col], object$mapping[[col]], prefix = col)
     new_data <- bind_cols(new_data, tmp)

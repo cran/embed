@@ -47,6 +47,8 @@
 #'
 #' When you [`tidy()`][tidy.recipe()] this step, a tibble with columns
 #' `terms` (the selectors or variables selected) is returned.
+#' 
+#' @template case-weights-not-supported
 #'
 #' @references
 #' McInnes, L., & Healy, J. (2018). UMAP: Uniform Manifold Approximation and
@@ -226,6 +228,8 @@ prep.step_umap <- function(x, training, info = NULL, ...) {
 
 #' @export
 bake.step_umap <- function(object, new_data, ...) {
+  check_new_data(names(object$object$xnames), object, new_data)
+  
   if (length(object$object) == 0) {
     return(new_data)
   }

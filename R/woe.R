@@ -70,6 +70,8 @@
 #' `terms` (the selectors or variables selected), `value`, `n_tot`, `n_bad`,
 #' `n_good`, `p_bad`, `p_good`, `woe` and `outcome` is returned.. See 
 #' [dictionary()] for more information.
+#' 
+#' @template case-weights-not-supported
 #'
 #' @references Kullback, S. (1959). *Information Theory and Statistics.* Wiley, New York.
 #'
@@ -415,11 +417,15 @@ prep.step_woe <- function(x, training, info = NULL, ...) {
 
 #' @export
 bake.step_woe <- function(object, new_data, ...) {
+  dict <- object$dictionary
+  woe_vars <- unique(dict$variable)
+  
+  check_new_data(woe_vars, object, new_data)
+  
   if (nrow(object$dictionary) == 0) {
     return(new_data)
   }
-  dict <- object$dictionary
-  woe_vars <- unique(dict$variable)
+  
   new_data <- add_woe(
     .data = new_data,
     outcome = dict$outcome[1],
@@ -427,7 +433,7 @@ bake.step_woe <- function(object, new_data, ...) {
     prefix = object$prefix
   )
   new_data <- new_data[, !(colnames(new_data) %in% woe_vars), drop = FALSE]
-  as_tibble(new_data)
+  new_data
 }
 
 #' @export
