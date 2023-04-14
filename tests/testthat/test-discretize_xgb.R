@@ -11,8 +11,6 @@ data("credit_data", package = "modeldata")
 data("ames", package = "modeldata")
 data("attrition", package = "modeldata")
 
-# ------------------------------------------------------------------------------
-
 # Data for classification problem testing
 set.seed(42)
 credit_data_split <- initial_split(credit_data, strata = "Status")
@@ -29,7 +27,7 @@ rec_credit <- credit_data_train %>%
   prep(retain = TRUE)
 
 xgb_credit_train <- xgboost::xgb.DMatrix(
-  data = as.matrix(juice(rec_credit)),
+  data = as.matrix(bake(rec_credit, new_data = NULL)),
   label = ifelse(credit_data_train[["Status"]] == "bad", 0, 1)
 )
 
@@ -38,11 +36,10 @@ xgb_credit_test <- xgboost::xgb.DMatrix(
   label = ifelse(credit_data_test[["Status"]] == "bad", 0, 1)
 )
 
-# ------------------------------------------------------------------------------
-
 # Data for multi-classification problem testing
 set.seed(42)
-attrition <- attrition %>% mutate(EducationField = as.integer(EducationField) - 1)
+attrition <- attrition %>%
+  mutate(EducationField = as.integer(EducationField) - 1)
 attrition_data_split <- initial_split(attrition, strata = "EducationField")
 attrition_data_train <- training(attrition_data_split)
 attrition_data_test <- testing(attrition_data_split)
@@ -57,7 +54,7 @@ rec_attrition <- attrition_data_train %>%
   prep(retain = TRUE)
 
 xgb_attrition_train <- xgboost::xgb.DMatrix(
-  data = as.matrix(juice(rec_attrition)),
+  data = as.matrix(bake(rec_attrition, new_data = NULL)),
   label = attrition_data_train$EducationField
 )
 
@@ -65,8 +62,6 @@ xgb_attrition_test <- xgboost::xgb.DMatrix(
   data = as.matrix(bake(rec_attrition, new_data = attrition_data_test)),
   label = attrition_data_test$EducationField
 )
-
-# ------------------------------------------------------------------------------
 
 ames$Sale_Price <- log10(ames$Sale_Price)
 # Data for regression problem testing (naive)
@@ -85,7 +80,7 @@ ames_rec <- ames_data_train %>%
   prep(retain = TRUE)
 
 xgb_ames_train <- xgboost::xgb.DMatrix(
-  data = as.matrix(juice(ames_rec)),
+  data = as.matrix(bake(ames_rec, new_data = NULL)),
   label = ames_data_train[["Sale_Price"]]
 )
 
@@ -93,8 +88,6 @@ xgb_ames_test <- xgboost::xgb.DMatrix(
   data = as.matrix(bake(ames_rec, new_data = ames_data_test)),
   label = ames_data_test[["Sale_Price"]]
 )
-
-# ------------------------------------------------------------------------------
 
 set.seed(8497)
 sim_tr_cls <- sim_data_2class(1000)
@@ -107,8 +100,6 @@ sim_te_mcls <- sim_data_3class(100)
 set.seed(8497)
 sim_tr_reg <- sim_data_reg(1000)
 sim_te_reg <- sim_data_reg(100)
-
-# ------------------------------------------------------------------------------
 
 test_that("run_xgboost for classification", {
   xgboost <- embed:::run_xgboost(
@@ -267,7 +258,6 @@ test_that("xgb_binning for regression", {
   expect_true(length(xgb_binning) > 1)
   expect_type(xgb_binning, "double")
 
-
   # Algorithm runs on a too small training set/ insufficient variation in data
 
   expect_snapshot(
@@ -297,8 +287,8 @@ test_that("step_discretize_xgb for classification", {
   xgb_train_bins <- bake(xgb_rec, sim_tr_cls)
   xgb_test_bins <- bake(xgb_rec, sim_te_cls)
 
-  expect_snapshot(xgb_train_bins)
-  expect_snapshot(xgb_test_bins)
+  expect_snapshot(xgb_train_bins[1:10, ])
+  expect_snapshot(xgb_test_bins[1:10, ])
   expect_true(length(levels(xgb_train_bins$x)) > 1)
   expect_true(length(levels(xgb_train_bins$z)) > 1)
 
@@ -336,7 +326,6 @@ test_that("step_discretize_xgb for classification", {
       step_discretize_xgb(Time, outcome = "Status") %>%
       prep(retain = TRUE)
   })
-
 })
 
 test_that("step_discretize_xgb for multi-classification", {
@@ -352,8 +341,8 @@ test_that("step_discretize_xgb for multi-classification", {
   xgb_train_bins <- bake(xgb_rec, sim_tr_mcls)
   xgb_test_bins <- bake(xgb_rec, sim_te_mcls)
 
-  expect_snapshot(xgb_train_bins)
-  expect_snapshot(xgb_test_bins)
+  expect_snapshot(xgb_train_bins[1:10, ])
+  expect_snapshot(xgb_test_bins[1:10, ])
   expect_true(length(levels(xgb_train_bins$x)) > 0)
   expect_true(length(levels(xgb_train_bins$z)) > 0)
 
@@ -367,12 +356,12 @@ test_that("step_discretize_xgb for multi-classification", {
   )
 
   # Too few data
-  expect_snapshot(error = TRUE,
+  expect_snapshot(
+    error = TRUE,
     recipe(class ~ ., data = sim_tr_mcls[1:9, ]) %>%
       step_discretize_xgb(all_predictors(), outcome = "class") %>%
       prep()
   )
-
 
   # No numeric variables present
   predictors_non_numeric <- c(
@@ -467,16 +456,38 @@ test_that("step_discretize_xgb for regression", {
     step_discretize_xgb(all_predictors(), outcome = "Sale_Price")
 })
 
+test_that("xgb_binning() errors if only one class in outcome", {
+  const_outcome <- data.frame(
+    outcome = factor(rep("a", 1000)),
+    predictor = rep(1, 1000)
+  )
+  expect_snapshot(
+    error = TRUE,
+    embed:::xgb_binning(
+      const_outcome,
+      "outcome",
+      "predictor",
+      sample_val = 0.20,
+      learn_rate = 0.3,
+      num_breaks = 10,
+      tree_depth = 1,
+      min_n = 5
+    )
+  )
+})
+
 test_that("bake method errors when needed non-standard role columns are missing", {
   rec <- recipe(class ~ ., data = sim_tr_cls) %>%
     step_discretize_xgb(x, z, outcome = "class") %>%
     update_role(x, new_role = "potato") %>%
     update_role_requirements(role = "potato", bake = FALSE)
-  
+
   rec_trained <- prep(rec, training = sim_tr_cls, verbose = FALSE)
-  
-  expect_error(bake(rec_trained, new_data = sim_tr_cls[, -1]),
-               class = "new_data_missing_column")
+
+  expect_error(
+    bake(rec_trained, new_data = sim_tr_cls[, -1]),
+    class = "new_data_missing_column"
+  )
 })
 
 test_that("printing", {
@@ -487,8 +498,6 @@ test_that("printing", {
   expect_snapshot(xgb_rec)
   expect_snapshot(prep(xgb_rec))
 })
-
-# ------------------------------------------------------------------------------
 
 test_that("empty selections", {
   data(ad_data, package = "modeldata")
@@ -505,29 +514,28 @@ test_that("empty selections", {
   )
 })
 
-
 test_that("case weights step_discretize_xgb", {
   sim_tr_cls_cw <- sim_tr_cls %>%
     mutate(weight = importance_weights(rep(1:0, each = 500)))
-  
+
   sim_tr_mcls_cw <- sim_tr_mcls %>%
     mutate(weight = importance_weights(rep(1:0, each = 500)))
-  
+
   sim_tr_reg_cw <- sim_tr_reg %>%
     mutate(weight = importance_weights(rep(1:0, each = 500)))
-  
+
   # classification ------------------------------------------------------------
   set.seed(125)
   # General use
   xgb_rec_cw <-
     recipe(class ~ ., data = sim_tr_cls_cw) %>%
     step_discretize_xgb(all_predictors(), outcome = "class")
-  
+
   set.seed(28)
   xgb_rec_cw <- prep(xgb_rec_cw, training = sim_tr_cls_cw)
-  
+
   exp_rules <- list()
-  
+
   set.seed(28)
   for (col_names in c("x", "z")) {
     exp_rules[[col_names]] <- xgb_binning(
@@ -546,19 +554,19 @@ test_that("case weights step_discretize_xgb", {
     exp_rules,
     xgb_rec_cw$steps[[1]]$rules
   )
-  
+
   # multi-classification ------------------------------------------------------
   set.seed(125)
   # General use
   xgb_rec_cw <-
     recipe(class ~ ., data = sim_tr_mcls_cw) %>%
     step_discretize_xgb(all_predictors(), outcome = "class")
-  
+
   set.seed(28)
   xgb_rec_cw <- prep(xgb_rec_cw, training = sim_tr_mcls_cw)
-  
+
   exp_rules <- list()
-  
+
   set.seed(28)
   for (col_names in c("x", "z")) {
     exp_rules[[col_names]] <- xgb_binning(
@@ -577,19 +585,19 @@ test_that("case weights step_discretize_xgb", {
     exp_rules,
     xgb_rec_cw$steps[[1]]$rules
   )
-  
+
   # regression ----------------------------------------------------------------
   set.seed(125)
   # General use
   xgb_rec_cw <-
     recipe(y ~ ., data = sim_tr_reg_cw) %>%
     step_discretize_xgb(all_predictors(), outcome = "y")
-  
+
   set.seed(28)
   xgb_rec_cw <- prep(xgb_rec_cw, training = sim_tr_reg_cw)
-  
+
   exp_rules <- list()
-  
+
   set.seed(28)
   for (col_names in c("x", "z")) {
     exp_rules[[col_names]] <- xgb_binning(
@@ -608,7 +616,43 @@ test_that("case weights step_discretize_xgb", {
     exp_rules,
     xgb_rec_cw$steps[[1]]$rules
   )
-  
+
   # printing ------------------------------------------------------------------
   expect_snapshot(xgb_rec_cw)
+})
+
+test_that("tunable", {
+  rec <-
+    recipe(~., data = mtcars) %>%
+    step_discretize_xgb(all_predictors(), outcome = "mpg")
+  rec_param <- tunable.step_discretize_xgb(rec$steps[[1]])
+  expect_equal(
+    rec_param$name, 
+    c("sample_val", "learn_rate", "num_breaks", "tree_depth", "min_n")
+  )
+  expect_true(all(rec_param$source == "recipe"))
+  expect_true(is.list(rec_param$call_info))
+  expect_equal(nrow(rec_param), 5)
+  expect_equal(
+    names(rec_param),
+    c("name", "call_info", "source", "component", "component_id")
+  )
+})
+
+test_that("tunable is setup to works with extract_parameter_set_dials works", {
+  rec <- recipe(~., data = mtcars) %>%
+    step_discretize_xgb(
+      all_predictors(),
+      outcome = "mpg",
+      sample_val = hardhat::tune(),
+      learn_rate = hardhat::tune(),
+      num_breaks = hardhat::tune(),
+      tree_depth = hardhat::tune(),
+      min_n = hardhat::tune()
+    )
+  
+  params <- extract_parameter_set_dials(rec)
+  
+  expect_s3_class(params, "parameters")
+  expect_identical(nrow(params), 5L)
 })

@@ -4,7 +4,7 @@
       xgboost
     Output
       ##### xgb.Booster
-      raw: 74.2 Kb 
+      raw: 69.1 Kb 
       call:
         xgboost::xgb.train(params = .params, data = .train, nrounds = 100, 
           watchlist = list(train = .train, test = .test), verbose = 0, 
@@ -19,19 +19,19 @@
         cb.early.stop(stopping_rounds = early_stopping_rounds, maximize = maximize, 
           verbose = verbose)
       # of features: 13 
-      niter: 96
-      best_iteration : 86 
-      best_ntreelimit : 86 
-      best_score : 0.4421503 
-      best_msg : [86]	train-logloss:0.417583	test-logloss:0.442150 
+      niter: 89
+      best_iteration : 79 
+      best_ntreelimit : 79 
+      best_score : 0.4442069 
+      best_msg : [79]	train-logloss:0.420000	test-logloss:0.444207 
       nfeatures : 13 
       evaluation_log:
           iter train_logloss test_logloss
              1     0.6279229    0.6303495
              2     0.5869984    0.5894989
       ---                                
-            95     0.4157892    0.4425857
-            96     0.4156102    0.4432699
+            88     0.4180034    0.4449478
+            89     0.4178084    0.4446590
 
 # run_xgboost for multi-classification
 
@@ -143,9 +143,9 @@
 # step_discretize_xgb for classification
 
     Code
-      xgb_train_bins
+      xgb_train_bins[1:10, ]
     Output
-      # A tibble: 1,000 x 3
+      # A tibble: 10 x 3
          x               z               class
          <fct>           <fct>           <fct>
        1 [0.6808, Inf]   [0.4208,0.7999) a    
@@ -158,14 +158,13 @@
        8 [0.5749,0.6808) [-Inf,0.3327)   a    
        9 [0.2779,0.3687) [0.4208,0.7999) a    
       10 [0.3687,0.5749) [0.4208,0.7999) b    
-      # ... with 990 more rows
 
 ---
 
     Code
-      xgb_test_bins
+      xgb_test_bins[1:10, ]
     Output
-      # A tibble: 100 x 3
+      # A tibble: 10 x 3
          x               z               class
          <fct>           <fct>           <fct>
        1 [0.5749,0.6808) [-Inf,0.3327)   b    
@@ -178,7 +177,6 @@
        8 [0.6808, Inf]   [0.7999, Inf]   a    
        9 [0.3687,0.5749) [0.7999, Inf]   b    
       10 [0.3687,0.5749) [0.4208,0.7999) b    
-      # ... with 90 more rows
 
 ---
 
@@ -186,7 +184,8 @@
       recipe(class ~ ., data = sim_tr_cls[1:9, ]) %>% step_discretize_xgb(
         all_predictors(), outcome = "class") %>% prep()
     Condition
-      Error in `prep()`:
+      Error in `step_discretize_xgb()`:
+      Caused by error in `prep()`:
       ! Too few observations in the early stopping validation set.Consider increasing the `sample_val` parameter.
 
 ---
@@ -198,27 +197,27 @@
     Condition
       Warning:
       More than 20 unique training set values are required. Predictors 'Time' were not processed; their original values will be used.
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-            role #variables
-         outcome          1
-       predictor         13
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 13
       
-      Training data contained 3340 data points and 301 incomplete rows. 
+      -- Training information 
+      Training data contained 3340 data points and 301 incomplete rows.
       
-      Operations:
-      
-      Discretizing variables using xgboost <none> [trained]
+      -- Operations 
+      * Discretizing variables using xgboost: <none> | Trained
 
 # step_discretize_xgb for multi-classification
 
     Code
-      xgb_train_bins
+      xgb_train_bins[1:10, ]
     Output
-      # A tibble: 1,000 x 3
+      # A tibble: 10 x 3
          x               z             class
          <fct>           <fct>         <fct>
        1 [0.6879, Inf]   [0.3274, Inf] c    
@@ -231,14 +230,13 @@
        8 [0.5863,0.6879) [-Inf,0.3274) c    
        9 [-Inf,0.2887)   [0.3274, Inf] a    
       10 [0.3821,0.5863) [0.3274, Inf] b    
-      # ... with 990 more rows
 
 ---
 
     Code
-      xgb_test_bins
+      xgb_test_bins[1:10, ]
     Output
-      # A tibble: 100 x 3
+      # A tibble: 10 x 3
          x               z             class
          <fct>           <fct>         <fct>
        1 [0.5863,0.6879) [-Inf,0.3274) b    
@@ -251,7 +249,6 @@
        8 [0.6879, Inf]   [0.3274, Inf] c    
        9 [0.3821,0.5863) [0.3274, Inf] b    
       10 [0.3821,0.5863) [0.3274, Inf] b    
-      # ... with 90 more rows
 
 ---
 
@@ -259,62 +256,71 @@
       recipe(class ~ ., data = sim_tr_mcls[1:9, ]) %>% step_discretize_xgb(
         all_predictors(), outcome = "class") %>% prep()
     Condition
-      Error in `prep()`:
+      Error in `step_discretize_xgb()`:
+      Caused by error in `prep()`:
       ! Too few observations in the early stopping validation set.Consider increasing the `sample_val` parameter.
+
+# xgb_binning() errors if only one class in outcome
+
+    Code
+      embed:::xgb_binning(const_outcome, "outcome", "predictor", sample_val = 0.2,
+        learn_rate = 0.3, num_breaks = 10, tree_depth = 1, min_n = 5)
+    Condition
+      Error:
+      ! Outcome variable only has less than 2 levels. Doesn't conform to regresion or classification task.
 
 # printing
 
     Code
       xgb_rec
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-            role #variables
-         outcome          1
-       predictor          2
+      -- Inputs 
+      Number of variables by role
+      outcome:   1
+      predictor: 2
       
-      Operations:
-      
-      Discretizing variables using xgboost all_predictors()
+      -- Operations 
+      * Discretizing variables using xgboost: all_predictors()
 
 ---
 
     Code
       prep(xgb_rec)
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-            role #variables
-         outcome          1
-       predictor          2
+      -- Inputs 
+      Number of variables by role
+      outcome:   1
+      predictor: 2
       
-      Training data contained 1000 data points and no missing data.
+      -- Training information 
+      Training data contained 1000 data points and no incomplete rows.
       
-      Operations:
-      
-      Discretizing variables using xgboost x, z [trained]
+      -- Operations 
+      * Discretizing variables using xgboost: x, z | Trained
 
 # case weights step_discretize_xgb
 
     Code
       xgb_rec_cw
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-               role #variables
-       case_weights          1
-            outcome          1
-          predictor          2
+      -- Inputs 
+      Number of variables by role
+      outcome:      1
+      predictor:    2
+      case_weights: 1
       
-      Training data contained 1000 data points and no missing data.
+      -- Training information 
+      Training data contained 1000 data points and no incomplete rows.
       
-      Operations:
-      
-      Discretizing variables using xgboost x, z [weighted, trained]
+      -- Operations 
+      * Discretizing variables using xgboost: x, z | Trained, weighted
 

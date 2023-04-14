@@ -35,7 +35,7 @@
     Code
       dictionary(df %>% filter(y %in% "B"), "y")
     Condition
-      Error in `.f()`:
+      Error in `dictionary()`:
       ! 'outcome' must have exactly 2 categories (has 1)
 
 # add_woe do not accept dictionary with unexpected layout
@@ -74,44 +74,45 @@
     Output
       The retained training set is ~ 0.14 Mb  in memory.
       
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-            role #variables
-         outcome          1
-       predictor         13
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 13
       
-      Training data contained 2000 data points and 186 incomplete rows. 
+      -- Training information 
+      Training data contained 2000 data points and 186 incomplete rows.
       
-      Operations:
-      
-      WoE version against outcome Status for Home, Marital, Records, Job [trained]
+      -- Operations 
+      * WoE version against outcome Status for: Home, Marital, Records, Job | Trained
 
 ---
 
     Code
       prep(rec_all_numeric, training = credit_tr)
     Condition
-      Error in `check_type()`:
-      ! All columns selected for the step should be factor or character
+      Error in `step_woe()`:
+      Caused by error in `prep()`:
+      ! All columns selected for the step should be string, factor, or ordered.
 
 # printing
 
     Code
       woe_extract
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-            role #variables
-         outcome          1
-       predictor         13
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 13
       
-      Operations:
-      
-      WoE version against outcome Status for Job, Home
+      -- Operations 
+      * WoE version against outcome Status for: Job, Home
 
 ---
 
@@ -120,20 +121,20 @@
     Condition
       Warning:
       Some columns used by `step_woe()` have categories with less than 10 values: 'Home', 'Job'
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-            role #variables
-         outcome          1
-       predictor         13
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 13
       
-      Training data contained 2000 data points and 186 incomplete rows. 
+      -- Training information 
+      Training data contained 2000 data points and 186 incomplete rows.
       
-      Operations:
-      
-      WoE version against outcome Status for Job, Home [trained]
+      -- Operations 
+      * WoE version against outcome Status for: Job, Home | Trained
 
 # 2-level factors
 
@@ -141,6 +142,7 @@
       recipe(Species ~ ., data = iris3) %>% step_woe(group, outcome = vars(Species)) %>%
         prep()
     Condition
-      Error in `.f()`:
+      Error in `step_woe()`:
+      Caused by error in `dictionary()`:
       ! 'outcome' must have exactly 2 categories (has 3)
 

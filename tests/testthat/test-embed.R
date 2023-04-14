@@ -1,7 +1,9 @@
 source(testthat::test_path("make_example_data.R"))
-source(testthat::test_path("test_helpers.R"))
+source(testthat::test_path("test-helpers.R"))
 
-# ------------------------------------------------------------------------------
+# Uncomment to make stuff run on M1
+# tensorflow::tf$config$get_visible_devices("CPU") %>%
+#   tensorflow::tf$config$set_visible_devices()
 
 test_that("factor encoded predictor", {
   skip_on_cran()
@@ -10,7 +12,7 @@ test_that("factor encoded predictor", {
   class_test <- recipe(x2 ~ ., data = ex_dat) %>%
     step_embed(x3, outcome = vars(x2), options = embed_control(verbose = 0), id = "id") %>%
     prep(training = ex_dat, retain = TRUE)
-  tr_values <- juice(class_test, contains("embed"))
+  tr_values <- bake(class_test, new_data = NULL, contains("embed"))
   new_values <- bake(class_test, new_data = new_dat, contains("embed"))
   expect_snapshot(
     new_values_ch <- bake(class_test, new_data = new_dat_ch, contains("embed"))
@@ -73,7 +75,6 @@ test_that("factor encoded predictor", {
   )
 })
 
-
 test_that("character encoded predictor", {
   skip_on_cran()
   skip_if(!is_tf_available())
@@ -81,7 +82,7 @@ test_that("character encoded predictor", {
   class_test <- recipe(x2 ~ ., data = ex_dat_ch) %>%
     step_embed(x3, outcome = vars(x2), options = embed_control(verbose = 0)) %>%
     prep(training = ex_dat_ch, retain = TRUE)
-  tr_values <- juice(class_test, contains("embed"))
+  tr_values <- bake(class_test, new_data = NULL, contains("embed"))
   new_values <- bake(class_test, new_data = new_dat, contains("embed"))
   new_values_fc <- bake(class_test, new_data = new_dat, contains("embed"))
 
@@ -142,8 +143,6 @@ test_that("character encoded predictor", {
   )
 })
 
-# ------------------------------------------------------------------------------
-
 test_that("factor encoded predictor", {
   skip_on_cran()
   skip_if(!is_tf_available())
@@ -151,7 +150,7 @@ test_that("factor encoded predictor", {
   class_test <- recipe(x1 ~ ., data = ex_dat) %>%
     step_embed(x3, outcome = vars(x1), options = embed_control(verbose = 0)) %>%
     prep(training = ex_dat, retain = TRUE)
-  tr_values <- juice(class_test, contains("embed"))
+  tr_values <- bake(class_test, new_data = NULL, contains("embed"))
   new_values <- bake(class_test, new_data = new_dat, contains("embed"))
   expect_snapshot(
     new_values_ch <- bake(class_test, new_data = new_dat_ch, contains("embed"))
@@ -213,7 +212,6 @@ test_that("factor encoded predictor", {
   )
 })
 
-
 test_that("character encoded predictor", {
   skip_on_cran()
   skip_if(!is_tf_available())
@@ -221,7 +219,7 @@ test_that("character encoded predictor", {
   class_test <- recipe(x1 ~ ., data = ex_dat_ch) %>%
     step_embed(x3, outcome = vars(x1), num_terms = 5, options = embed_control(verbose = 0)) %>%
     prep(training = ex_dat_ch, retain = TRUE)
-  tr_values <- juice(class_test, contains("embed"))
+  tr_values <- bake(class_test, new_data = NULL, contains("embed"))
   new_values <- bake(class_test, new_data = new_dat, contains("embed"))
   new_values_fc <- bake(class_test, new_data = new_dat, contains("embed"))
 
@@ -282,9 +280,6 @@ test_that("character encoded predictor", {
   )
 })
 
-
-# ------------------------------------------------------------------------------
-
 test_that("bad args", {
   skip_on_cran()
   skip_if(!is_tf_available())
@@ -293,7 +288,8 @@ test_that("bad args", {
   three_class$fac <- rep(letters[1:3], 50)
   three_class$logical <- rep(c(TRUE, FALSE), 75)
 
-  expect_snapshot(error = TRUE,
+  expect_snapshot(
+    error = TRUE,
     recipe(Species ~ ., data = three_class) %>%
       step_embed(Sepal.Length, outcome = vars(Species)) %>%
       prep(training = three_class, retain = TRUE)
@@ -304,14 +300,37 @@ test_that("bake method errors when needed non-standard role columns are missing"
   skip_on_cran()
   skip_if(!is_tf_available())
   rec <- recipe(x2 ~ ., data = ex_dat) %>%
-    step_embed(x3, outcome = vars(x2), options = embed_control(verbose = 0), id = "id") %>%
+    step_embed(
+      x3,
+      outcome = vars(x2),
+      options = embed_control(verbose = 0),
+      id = "id"
+    ) %>%
     update_role(x3, new_role = "potato") %>%
     update_role_requirements(role = "potato", bake = FALSE)
-  
+
   rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
+
+  expect_error(
+    bake(rec_trained, new_data = ex_dat[, -3]),
+    class = "new_data_missing_column"
+  )
+})
+
+test_that("check_name() is used", {
+  skip_on_cran()
+  skip_if(!is_tf_available())
   
-  expect_error(bake(rec_trained, new_data = ex_dat[, -3]),
-               class = "new_data_missing_column")
+  dat <- ex_dat
+  dat$x3_embed_1 <- dat$x3
+  
+  rec <- recipe(~., data = dat) %>%
+    step_embed(x3, outcome = vars(x2), options = embed_control(verbose = 0))
+  
+  expect_snapshot(
+    error = TRUE,
+    prep(rec, training = dat)
+  )
 })
 
 test_that("printing", {
@@ -324,8 +343,21 @@ test_that("printing", {
   expect_snapshot(prep(print_test))
 })
 
-
-# ------------------------------------------------------------------------------
+test_that("keep_original_cols works", {
+  skip_on_cran()
+  skip_if(!is_tf_available())
+  
+  rec <- recipe(x2 ~ x3, data = ex_dat_ch) %>%
+    step_embed(x3, outcome = vars(x2), keep_original_cols = TRUE)
+  
+  rec_trained <- prep(rec, training = ex_dat_ch, verbose = FALSE)
+  preds <- bake(rec_trained, new_data = ex_dat_ch, all_predictors())
+  
+  expect_equal(
+    colnames(preds),
+    c("x3", paste0("x3_embed_", 1:2))
+  )
+})
 
 test_that("empty selections", {
   data(ad_data, package = "modeldata")
@@ -340,4 +372,34 @@ test_that("empty selections", {
     bake(rec, new_data = NULL),
     ad_data %>% select(Genotype, tau, Class)
   )
+})
+
+test_that("tunable", {
+  rec <-
+    recipe(~., data = mtcars) %>%
+    step_embed(all_predictors(), outcome = "mpg")
+  rec_param <- tunable.step_embed(rec$steps[[1]])
+  expect_equal(rec_param$name, c("num_terms", "hidden_units"))
+  expect_true(all(rec_param$source == "recipe"))
+  expect_true(is.list(rec_param$call_info))
+  expect_equal(nrow(rec_param), 2)
+  expect_equal(
+    names(rec_param),
+    c("name", "call_info", "source", "component", "component_id")
+  )
+})
+
+test_that("tunable is setup to works with extract_parameter_set_dials works", {
+  rec <- recipe(~., data = mtcars) %>%
+    step_embed(
+      all_predictors(),
+      outcome = "mpg",
+      num_terms = hardhat::tune(),
+      hidden_units = hardhat::tune()
+    )
+  
+  params <- extract_parameter_set_dials(rec)
+  
+  expect_s3_class(params, "parameters")
+  expect_identical(nrow(params), 2L)
 })

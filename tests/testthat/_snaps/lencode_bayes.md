@@ -4,14 +4,6 @@
       class_test <- recipe(x2 ~ ., data = ex_dat) %>% step_lencode_bayes(x3, outcome = vars(
         x2), verbose = FALSE, options = opts) %>% prep(training = ex_dat, retain = TRUE)
     Condition
-      Warning:
-      Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-      Running the chains for more iterations may help. See
-      https://mc-stan.org/misc/warnings.html#bulk-ess
-      Warning:
-      Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
-      Running the chains for more iterations may help. See
-      https://mc-stan.org/misc/warnings.html#tail-ess
 
 ---
 
@@ -48,14 +40,6 @@
         outcome = vars(x2), verbose = FALSE, options = opts, id = "id") %>% prep(
         training = ex_dat_ch, retain = TRUE, options = opts)
     Condition
-      Warning:
-      Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-      Running the chains for more iterations may help. See
-      https://mc-stan.org/misc/warnings.html#bulk-ess
-      Warning:
-      Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
-      Running the chains for more iterations may help. See
-      https://mc-stan.org/misc/warnings.html#tail-ess
 
 ---
 
@@ -88,38 +72,37 @@
 
     Code
       print_test
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-            role #variables
-         outcome          1
-       predictor          3
+      -- Inputs 
+      Number of variables by role
+      outcome:   1
+      predictor: 3
       
-      Operations:
-      
-      Linear embedding for factors via Bayesian GLM for x3
+      -- Operations 
+      * Linear embedding for factors via Bayesian GLM for: x3
 
 ---
 
     Code
       prep(print_test)
     Condition
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-            role #variables
-         outcome          1
-       predictor          3
+      -- Inputs 
+      Number of variables by role
+      outcome:   1
+      predictor: 3
       
-      Training data contained 500 data points and no missing data.
+      -- Training information 
+      Training data contained 500 data points and no incomplete rows.
       
-      Operations:
-      
-      Linear embedding for factors via Bayesian GLM for x3 [trained]
+      -- Operations 
+      * Linear embedding for factors via Bayesian GLM for: x3 | Trained
 
 # case weights
 
@@ -138,19 +121,19 @@
 
     Code
       class_test
-    Output
-      Recipe
+    Message
       
-      Inputs:
+      -- Recipe ----------------------------------------------------------------------
       
-               role #variables
-       case_weights          1
-            outcome          1
-          predictor          3
+      -- Inputs 
+      Number of variables by role
+      outcome:      1
+      predictor:    3
+      case_weights: 1
       
-      Training data contained 500 data points and no missing data.
+      -- Training information 
+      Training data contained 500 data points and no incomplete rows.
       
-      Operations:
-      
-      Linear embedding for factors via Bayesian GLM for x3 [weighted, trained]
+      -- Operations 
+      * Linear embedding for factors via Bayesian GLM for: x3 | Trained, weighted
 

@@ -4,8 +4,6 @@ library(rpart)
 
 source(test_path("make_binned_data.R"))
 
-# ------------------------------------------------------------------------------
-
 set.seed(8497)
 sim_tr_cls <- sim_data_2class(1000)
 sim_te_cls <- sim_data_2class(100)
@@ -17,8 +15,6 @@ sim_te_reg <- sim_data_reg(100)
 mod <- rpart(y ~ x, data = sim_tr_reg)
 
 best_split <- unname(mod$splits[, "index"])
-
-# ------------------------------------------------------------------------------
 
 test_that("low-level binning for classification", {
   expect_error(
@@ -80,8 +76,6 @@ test_that("low-level binning for regression", {
   expect_equal(splits, numeric(0))
 })
 
-# ------------------------------------------------------------------------------
-
 test_that("step function for classification", {
   expect_snapshot({
     cart_rec <-
@@ -102,7 +96,6 @@ test_that("step function for classification", {
   expect_equal(length(levels(cart_pred$x)), 3)
   expect_true(is.numeric(cart_pred$z))
 })
-
 
 test_that("step function for regression", {
   expect_snapshot({
@@ -125,8 +118,6 @@ test_that("step function for regression", {
   expect_true(is.numeric(cart_pred$z))
 })
 
-# ------------------------------------------------------------------------------
-
 test_that("bad args", {
   tmp <- sim_tr_reg
   tmp$w <- sample(letters[1:4], nrow(tmp), replace = TRUE)
@@ -138,8 +129,6 @@ test_that("bad args", {
       prep()
   })
 })
-
-# ------------------------------------------------------------------------------
 
 test_that("tidy method", {
   cart_rec <-
@@ -176,16 +165,16 @@ test_that("bake method errors when needed non-standard role columns are missing"
     step_discretize_cart(x, z, outcome = "class") %>%
     update_role(x, new_role = "potato") %>%
     update_role_requirements(role = "potato", bake = FALSE)
-  
+
   expect_warning(
     rec_trained <- prep(rec, training = sim_tr_cls, verbose = FALSE)
   )
- 
-  expect_error(bake(rec_trained, new_data = sim_tr_cls[, -1]),
-               class = "new_data_missing_column")
-})
 
-# ------------------------------------------------------------------------------
+  expect_error(
+    bake(rec_trained, new_data = sim_tr_cls[, -1]),
+    class = "new_data_missing_column"
+  )
+})
 
 test_that("printing", {
   cart_rec <-
@@ -195,9 +184,6 @@ test_that("printing", {
   expect_snapshot(cart_rec)
   expect_snapshot(prep(cart_rec))
 })
-
-
-# ------------------------------------------------------------------------------
 
 test_that("empty selections", {
   data(ad_data, package = "modeldata")
@@ -217,10 +203,10 @@ test_that("empty selections", {
 test_that("case weights step functions", {
   sim_tr_cls_cw <- sim_tr_cls %>%
     mutate(weight = importance_weights(rep(0:1, each = 500)))
-  
+
   sim_tr_reg_cw <- sim_tr_reg %>%
     mutate(weight = importance_weights(rep(0:1, each = 500)))
-  
+
   mod_cw <- rpart(y ~ x, data = sim_tr_reg, weights = rep(0:1, each = 500))
   best_split_cw <- unname(mod_cw$splits[, "index"])
 
@@ -231,10 +217,10 @@ test_that("case weights step functions", {
       step_discretize_cart(all_predictors(), outcome = "class") %>%
       prep()
   })
-  
+
   expect_equal(names(cart_rec$steps[[1]]$rules), "x")
   expect_equal(cart_rec$steps[[1]]$rules$x, best_split_cw)
-  
+
   # Regression
   expect_snapshot({
     cart_rec <-
@@ -242,9 +228,40 @@ test_that("case weights step functions", {
       step_discretize_cart(all_predictors(), outcome = "y") %>%
       prep()
   })
-  
+
   expect_equal(names(cart_rec$steps[[1]]$rules), c("x", "z"))
   expect_equal(cart_rec$steps[[1]]$rules$x, best_split_cw)
-  
+
   expect_snapshot(cart_rec)
+})
+
+test_that("tunable", {
+  rec <-
+    recipe(~., data = mtcars) %>%
+    step_discretize_cart(all_predictors(), outcome = "mpg")
+  rec_param <- tunable.step_discretize_cart(rec$steps[[1]])
+  expect_equal(rec_param$name, c("cost_complexity", "tree_depth", "min_n"))
+  expect_true(all(rec_param$source == "recipe"))
+  expect_true(is.list(rec_param$call_info))
+  expect_equal(nrow(rec_param), 3)
+  expect_equal(
+    names(rec_param),
+    c("name", "call_info", "source", "component", "component_id")
+  )
+})
+
+test_that("tunable is setup to works with extract_parameter_set_dials works", {
+  rec <- recipe(~., data = mtcars) %>%
+    step_discretize_cart(
+      all_predictors(),
+      outcome = "mpg",
+      cost_complexity = hardhat::tune(),
+      tree_depth = hardhat::tune(),
+      min_n = hardhat::tune()
+    )
+  
+  params <- extract_parameter_set_dials(rec)
+  
+  expect_s3_class(params, "parameters")
+  expect_identical(nrow(params), 3L)
 })

@@ -29,39 +29,38 @@ affected by the step. See \code{\link[=selections]{selections()}} for more detai
 
 \item{role}{Defaults to \code{"predictor"}.}
 
-\item{trained}{A logical to indicate if the quantities for preprocessing
-have been estimated.}
+\item{trained}{A logical to indicate if the quantities for preprocessing have
+been estimated.}
 
 \item{outcome}{A call to \code{vars} to specify which variable is used as the
 outcome to train XgBoost models in order to discretize explanatory
 variables.}
 
-\item{sample_val}{Share of data used for validation (with early stopping) of the learned splits
-(the rest is used for training). Defaults to 0.20.}
+\item{sample_val}{Share of data used for validation (with early stopping) of
+the learned splits (the rest is used for training). Defaults to 0.20.}
 
 \item{learn_rate}{The rate at which the boosting algorithm adapts from
 iteration-to-iteration. Corresponds to \code{eta} in the \pkg{xgboost} package.
 Defaults to 0.3.}
 
 \item{num_breaks}{The \emph{maximum} number of discrete bins to bucket continuous
-features. Corresponds to \code{max_bin} in the \pkg{xgboost} package. Defaults to
-10.}
+features. Corresponds to \code{max_bin} in the \pkg{xgboost} package. Defaults
+to 10.}
 
 \item{tree_depth}{The maximum depth of the tree (i.e. number of splits).
 Corresponds to \code{max_depth} in the \pkg{xgboost} package. Defaults to 1.}
 
 \item{min_n}{The minimum number of instances needed to be in each node.
-Corresponds to \code{min_child_weight} in the \pkg{xgboost} package. Defaults to 5.}
+Corresponds to \code{min_child_weight} in the \pkg{xgboost} package. Defaults to
+5.}
 
-\item{rules}{The splitting rules of the best XgBoost tree to retain for
-each variable.}
+\item{rules}{The splitting rules of the best XgBoost tree to retain for each
+variable.}
 
-\item{skip}{A logical. Should the step be skipped when the
-recipe is baked by \code{\link[recipes:bake]{recipes::bake()}}? While all operations are baked
-when \code{\link[recipes:prep]{recipes::prep()}} is run, some operations may not be able to be
-conducted on new data (e.g. processing the outcome variable(s)).
-Care should be taken when using \code{skip = TRUE} as it may affect
-the computations for subsequent operations}
+\item{skip}{A logical. Should the step be skipped when the recipe is baked by
+\code{\link[recipes:bake]{recipes::bake()}}? While all operations are baked when \code{\link[recipes:prep]{recipes::prep()}} is
+run, some operations may not be able to be conducted on new data (e.g.
+processing the outcome variable(s)). Care should be taken when using \code{skip = TRUE} as it may affect the computations for subsequent operations}
 
 \item{id}{A character string that is unique to this step to identify it.}
 }
@@ -71,37 +70,47 @@ sequence of any existing operations.
 }
 \description{
 \code{step_discretize_xgb} creates a \emph{specification} of a recipe step that will
-discretize numeric data (e.g. integers or doubles) into bins in a
-supervised way using an XgBoost model.
+discretize numeric data (e.g. integers or doubles) into bins in a supervised
+way using an XgBoost model.
 }
 \details{
-\code{step_discretize_xgb()} creates non-uniform bins from numerical
-variables by utilizing the information about the outcome variable and
-applying the xgboost model. It is advised to impute missing values before
-this step. This step is intended to be used particularly with linear models
-because thanks to creating non-uniform bins it becomes easier to learn
-non-linear patterns from the data.
+\code{step_discretize_xgb()} creates non-uniform bins from numerical variables by
+utilizing the information about the outcome variable and applying the xgboost
+model. It is advised to impute missing values before this step. This step is
+intended to be used particularly with linear models because thanks to
+creating non-uniform bins it becomes easier to learn non-linear patterns from
+the data.
 
-The best selection of buckets for each variable is selected using
-an internal early stopping scheme implemented in the \pkg{xgboost}
-package, which makes this discretization method prone to overfitting.
+The best selection of buckets for each variable is selected using an internal
+early stopping scheme implemented in the \pkg{xgboost} package, which makes
+this discretization method prone to overfitting.
 
-The pre-defined values of the underlying xgboost learns good
-and reasonably complex results. However, if one wishes to tune them the
-recommended path would be to first start with changing the value of
-\code{num_breaks} to e.g.: 20 or 30. If that doesn't give satisfactory results
-one could experiment with modifying the \code{tree_depth} or \code{min_n} parameters.
-Note that it is not recommended to tune \code{learn_rate} simultaneously with
-other parameters.
+The pre-defined values of the underlying xgboost learns good and reasonably
+complex results. However, if one wishes to tune them the recommended path
+would be to first start with changing the value of \code{num_breaks} to e.g.: 20
+or 30. If that doesn't give satisfactory results one could experiment with
+modifying the \code{tree_depth} or \code{min_n} parameters. Note that it is not
+recommended to tune \code{learn_rate} simultaneously with other parameters.
 
-This step requires the \pkg{xgboost} package. If not installed, the
-step will stop with a note about installing the package.
+This step requires the \pkg{xgboost} package. If not installed, the step will
+stop with a note about installing the package.
 
 Note that the original data will be replaced with the new bins.
 }
 \section{Tidying}{
-When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns
-\code{terms} (the columns that is selected), \code{values} is returned.
+When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns \code{terms}
+(the columns that is selected), \code{values} is returned.
+}
+
+\section{Tuning Parameters}{
+This step has 5 tuning parameters:
+\itemize{
+\item \code{sample_val}: Proportion of data for validation (type: double, default: 0.2)
+\item \code{learn_rate}: Learning Rate (type: double, default: 0.3)
+\item \code{num_breaks}: Number of Cut Points (type: integer, default: 10)
+\item \code{tree_depth}: Tree Depth (type: integer, default: 1)
+\item \code{min_n}: Minimal Node Size (type: integer, default: 5)
+}
 }
 
 \section{Case weights}{
@@ -113,26 +122,26 @@ To use them, see the documentation in \link[recipes:case_weights]{recipes::case_
 }
 
 \examples{
-library(modeldata)
-data(credit_data)
+\dontshow{if (rlang::is_installed(c("xgboost", "modeldata"))) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 library(rsample)
 library(recipes)
+data(credit_data, package = "modeldata")
 
-split <- initial_split(credit_data, strata = "Status")
+set.seed(1234)
+split <- initial_split(credit_data[1:1000, ], strata = "Status")
 
 credit_data_tr <- training(split)
 credit_data_te <- testing(split)
 
 xgb_rec <-
-  recipe(Status ~ ., data = credit_data_tr) \%>\%
-  step_impute_median(all_numeric()) \%>\%
-  step_discretize_xgb(all_numeric(), outcome = "Status")
+  recipe(Status ~ Income + Assets, data = credit_data_tr) \%>\%
+  step_impute_median(Income, Assets) \%>\%
+  step_discretize_xgb(Income, Assets, outcome = "Status")
 
-if (rlang::is_installed("xgboost")) {
-  xgb_rec <- prep(xgb_rec, training = credit_data_tr)
+xgb_rec <- prep(xgb_rec, training = credit_data_tr)
 
-  bake(xgb_rec, credit_data_te, Price)
-}
+bake(xgb_rec, credit_data_te, Assets)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=step_discretize_cart]{step_discretize_cart()}}, \code{\link[recipes:recipe]{recipes::recipe()}},
