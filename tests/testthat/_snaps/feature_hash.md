@@ -23,13 +23,49 @@
       prep(rec, training = dat)
     Condition
       Error in `step_feature_hash()`:
-      Caused by error in `check_name()`:
-      ! Name collision occured in `step_feature_hash`. The following variable names already exists: x3_hash_01.
+      Caused by error in `bake()`:
+      ! Name collision occured. The following variable names already exists:
+      i  x3_hash_01
+
+# empty printing
+
+    Code
+      rec
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 10
+      
+      -- Operations 
+      * Feature hashed dummy variables for: <none>
+
+---
+
+    Code
+      rec
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 10
+      
+      -- Training information 
+      Training data contained 32 data points and no incomplete rows.
+      
+      -- Operations 
+      * Feature hashed dummy variables for: <none> | Trained
 
 # printing
 
     Code
-      print_test
+      print(rec)
     Message
       
       -- Recipe ----------------------------------------------------------------------
@@ -45,7 +81,7 @@
 ---
 
     Code
-      prep(print_test)
+      prep(rec)
     Message
       
       -- Recipe ----------------------------------------------------------------------

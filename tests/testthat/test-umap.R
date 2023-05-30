@@ -225,20 +225,6 @@ test_that("can prep recipes with no keep_original_cols", {
   )
 })
 
-test_that("bake method errors when needed non-standard role columns are missing", {
-  rec <- recipe(Species ~ ., data = tr) %>%
-    step_umap(Sepal.Length, Sepal.Width, Petal.Length, Petal.Width) %>%
-    update_role(Petal.Width, new_role = "potato") %>%
-    update_role_requirements(role = "potato", bake = FALSE)
-
-  rec_trained <- prep(rec, training = tr, verbose = FALSE)
-
-  expect_error(
-    bake(rec_trained, new_data = tr[, -4]),
-    class = "new_data_missing_column"
-  )
-})
-
 test_that("check_name() is used", {
   dat <- tr
   dat$UMAP1 <- dat$Species
@@ -249,28 +235,6 @@ test_that("check_name() is used", {
   expect_snapshot(
     error = TRUE,
     prep(rec, training = dat)
-  )
-})
-
-test_that("printing", {
-  print_test <- recipe(~., data = tr[, -5]) %>%
-    step_umap(all_predictors())
-  expect_snapshot(print_test)
-  expect_snapshot(prep(print_test))
-})
-
-test_that("empty selections", {
-  data(ad_data, package = "modeldata")
-  expect_error(
-    rec <-
-      recipe(Class ~ Genotype + tau, data = ad_data) %>%
-      step_umap(starts_with("potato"), outcome = vars(Class)) %>%
-      prep(),
-    regexp = NA
-  )
-  expect_equal(
-    bake(rec, new_data = NULL),
-    ad_data %>% select(Genotype, tau, Class)
   )
 })
 
@@ -293,6 +257,8 @@ test_that("tunable", {
 })
 
 test_that("tunable is setup to works with extract_parameter_set_dials works", {
+  skip_if_not_installed("dials")
+  
   rec <- recipe(~., data = mtcars) %>%
     step_umap(
       all_predictors(),
@@ -307,4 +273,65 @@ test_that("tunable is setup to works with extract_parameter_set_dials works", {
   
   expect_s3_class(params, "parameters")
   expect_identical(nrow(params), 5L)
+})
+
+# Infrastructure ---------------------------------------------------------------
+
+test_that("bake method errors when needed non-standard role columns are missing", {
+  rec <- recipe(Species ~ ., data = tr) %>%
+    step_umap(Sepal.Length, Sepal.Width, Petal.Length, Petal.Width) %>%
+    update_role(Petal.Width, new_role = "potato") %>%
+    update_role_requirements(role = "potato", bake = FALSE)
+  
+  rec_trained <- prep(rec, training = tr, verbose = FALSE)
+  
+  expect_error(
+    bake(rec_trained, new_data = tr[, -4]),
+    class = "new_data_missing_column"
+  )
+})
+
+test_that("empty printing", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_umap(rec)
+  
+  expect_snapshot(rec)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_snapshot(rec)
+})
+
+test_that("empty selection prep/bake is a no-op", {
+  rec1 <- recipe(mpg ~ ., mtcars)
+  rec2 <- step_umap(rec1)
+  
+  rec1 <- prep(rec1, mtcars)
+  rec2 <- prep(rec2, mtcars)
+  
+  baked1 <- bake(rec1, mtcars)
+  baked2 <- bake(rec2, mtcars)
+  
+  expect_identical(baked1, baked2)
+})
+
+test_that("empty selection tidy method works", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_umap(rec)
+  
+  expect <- tibble(terms = character(), id = character())
+  
+  expect_identical(tidy(rec, number = 1), expect)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_identical(tidy(rec, number = 1), expect)
+})
+
+test_that("printing", {
+  rec <- recipe(~., data = tr[, -5]) %>%
+    step_umap(all_predictors())
+  
+  expect_snapshot(print(rec))
+  expect_snapshot(prep(rec))
 })

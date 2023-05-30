@@ -418,7 +418,7 @@ bake.step_embed <- function(object, new_data, ...) {
    
     tmp <- check_name(tmp, new_data, object, names(tmp))
     
-    new_data <- bind_cols(new_data, tmp)
+    new_data <- vec_cbind(new_data, tmp)
   }
   
   keep_original_cols <- get_keep_original_cols(object)
@@ -434,17 +434,25 @@ bake.step_embed <- function(object, new_data, ...) {
 #' @export
 tidy.step_embed <- function(x, ...) {
   if (is_trained(x)) {
-    for (i in seq_along(x$mapping)) {
-      x$mapping[[i]]$terms <- names(x$mapping)[i]
+    if (length(x$mapping) == 0) {
+      res <- tibble(
+        terms = character(),
+        level = character(),
+        value = double()
+      )
+    } else {
+      for (i in seq_along(x$mapping)) {
+        x$mapping[[i]]$terms <- names(x$mapping)[i]
+      }
+      res <- bind_rows(x$mapping)
+      names(res) <- gsub("^\\.\\.", "", names(res))
     }
-    res <- bind_rows(x$mapping)
-    names(res) <- gsub("^\\.\\.", "", names(res))
   } else {
     term_names <- sel2char(x$terms)
     res <- tibble(
+      terms = term_names,
       level = rep(na_chr, length(term_names)),
-      value = rep(na_dbl, length(term_names)),
-      terms = term_names
+      value = rep(na_dbl, length(term_names))
     )
   }
   res$id <- x$id
@@ -528,6 +536,10 @@ class2ind <- function(x) {
 #' is_tf_available()
 #' @export
 is_tf_available <- function() {
+  if (!rlang::is_installed("tensorflow")) {
+    return(FALSE)
+  }
+  
   capture.output(
     res <- try(tensorflow::tf_config(), silent = TRUE),
     file = NULL

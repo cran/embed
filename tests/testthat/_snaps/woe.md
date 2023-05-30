@@ -98,10 +98,59 @@
       Caused by error in `prep()`:
       ! All columns selected for the step should be string, factor, or ordered.
 
+# 2-level factors
+
+    Code
+      recipe(Species ~ ., data = iris3) %>% step_woe(group, outcome = vars(Species)) %>%
+        prep()
+    Condition
+      Error in `step_woe()`:
+      Caused by error in `dictionary()`:
+      ! 'outcome' must have exactly 2 categories (has 3)
+
+# empty printing
+
+    Code
+      rec
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 10
+      
+      -- Operations 
+      * WoE version against outcome mpg for: <none>
+
+---
+
+    Code
+      rec
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 10
+      
+      -- Training information 
+      Training data contained 32 data points and no incomplete rows.
+      
+      -- Operations 
+    Condition
+      Warning:
+      Unknown or uninitialised column: `variable`.
+    Message
+      * WoE version against outcome mpg for: <none> | Trained
+
 # printing
 
     Code
-      woe_extract
+      print(rec)
     Message
       
       -- Recipe ----------------------------------------------------------------------
@@ -117,7 +166,7 @@
 ---
 
     Code
-      prep(woe_extract)
+      prep(rec)
     Condition
       Warning:
       Some columns used by `step_woe()` have categories with less than 10 values: 'Home', 'Job'
@@ -131,18 +180,8 @@
       predictor: 13
       
       -- Training information 
-      Training data contained 2000 data points and 186 incomplete rows.
+      Training data contained 4454 data points and 415 incomplete rows.
       
       -- Operations 
       * WoE version against outcome Status for: Job, Home | Trained
-
-# 2-level factors
-
-    Code
-      recipe(Species ~ ., data = iris3) %>% step_woe(group, outcome = vars(Species)) %>%
-        prep()
-    Condition
-      Error in `step_woe()`:
-      Caused by error in `dictionary()`:
-      ! 'outcome' must have exactly 2 categories (has 3)
 

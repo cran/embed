@@ -4,6 +4,7 @@ library(rsample)
 
 skip_on_cran()
 skip_if_not_installed("xgboost")
+skip_if_not_installed("modeldata")
 
 source(test_path("make_binned_data.R"))
 
@@ -476,44 +477,6 @@ test_that("xgb_binning() errors if only one class in outcome", {
   )
 })
 
-test_that("bake method errors when needed non-standard role columns are missing", {
-  rec <- recipe(class ~ ., data = sim_tr_cls) %>%
-    step_discretize_xgb(x, z, outcome = "class") %>%
-    update_role(x, new_role = "potato") %>%
-    update_role_requirements(role = "potato", bake = FALSE)
-
-  rec_trained <- prep(rec, training = sim_tr_cls, verbose = FALSE)
-
-  expect_error(
-    bake(rec_trained, new_data = sim_tr_cls[, -1]),
-    class = "new_data_missing_column"
-  )
-})
-
-test_that("printing", {
-  xgb_rec <-
-    recipe(class ~ ., data = sim_tr_cls) %>%
-    step_discretize_xgb(all_predictors(), outcome = "class")
-
-  expect_snapshot(xgb_rec)
-  expect_snapshot(prep(xgb_rec))
-})
-
-test_that("empty selections", {
-  data(ad_data, package = "modeldata")
-  expect_error(
-    rec <-
-      recipe(Class ~ Genotype + tau, data = ad_data) %>%
-      step_discretize_xgb(starts_with("potato"), outcome = "Class") %>%
-      prep(),
-    regexp = NA
-  )
-  expect_equal(
-    bake(rec, new_data = NULL),
-    ad_data %>% select(Genotype, tau, Class)
-  )
-})
-
 test_that("case weights step_discretize_xgb", {
   sim_tr_cls_cw <- sim_tr_cls %>%
     mutate(weight = importance_weights(rep(1:0, each = 500)))
@@ -640,6 +603,8 @@ test_that("tunable", {
 })
 
 test_that("tunable is setup to works with extract_parameter_set_dials works", {
+  skip_if_not_installed("dials")
+  
   rec <- recipe(~., data = mtcars) %>%
     step_discretize_xgb(
       all_predictors(),
@@ -655,4 +620,65 @@ test_that("tunable is setup to works with extract_parameter_set_dials works", {
   
   expect_s3_class(params, "parameters")
   expect_identical(nrow(params), 5L)
+})
+
+# Infrastructure ---------------------------------------------------------------
+
+test_that("bake method errors when needed non-standard role columns are missing", {
+  rec <- recipe(class ~ ., data = sim_tr_cls) %>%
+    step_discretize_xgb(x, z, outcome = "class") %>%
+    update_role(x, new_role = "potato") %>%
+    update_role_requirements(role = "potato", bake = FALSE)
+  
+  rec_trained <- prep(rec, training = sim_tr_cls, verbose = FALSE)
+  
+  expect_error(
+    bake(rec_trained, new_data = sim_tr_cls[, -1]),
+    class = "new_data_missing_column"
+  )
+})
+
+test_that("empty printing", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_discretize_xgb(rec, outcome = "mpg")
+  
+  expect_snapshot(rec)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_snapshot(rec)
+})
+
+test_that("empty selection prep/bake is a no-op", {
+  rec1 <- recipe(mpg ~ ., mtcars)
+  rec2 <- step_discretize_xgb(rec1, outcome = "mpg")
+  
+  rec1 <- prep(rec1, mtcars)
+  rec2 <- prep(rec2, mtcars)
+  
+  baked1 <- bake(rec1, mtcars)
+  baked2 <- bake(rec2, mtcars)
+  
+  expect_identical(baked1, baked2)
+})
+
+test_that("empty selection tidy method works", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_discretize_xgb(rec, outcome = "mpg")
+  
+  expect <- tibble(terms = character(), value = double(), id = character())
+  
+  expect_identical(tidy(rec, number = 1), expect)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_identical(tidy(rec, number = 1), expect)
+})
+
+test_that("printing", {
+  rec <- recipe(class ~ ., data = sim_tr_cls) %>%
+    step_discretize_xgb(all_predictors(), outcome = "class")
+  
+  expect_snapshot(print(rec))
+  expect_snapshot(prep(rec))
 })

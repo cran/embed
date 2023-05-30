@@ -150,6 +150,7 @@ prep.step_pca_truncated <- function(x, training, info = NULL, ...) {
     }
   } else {
     prc_obj <- NULL
+    prc_obj$rotation <- matrix(nrow = 0, ncol = 0)
   }
 
   rownames(prc_obj$rotation) <- col_names
@@ -189,7 +190,7 @@ bake.step_pca_truncated <- function(object, new_data, ...) {
     comps <- comps[, 1:object$num_comp, drop = FALSE]
     comps <- as_tibble(comps)
     comps <- check_name(comps, new_data, object)
-    new_data <- bind_cols(new_data, comps)
+    new_data <- vec_cbind(new_data, comps)
     keep_original_cols <- get_keep_original_cols(object)
 
     if (!keep_original_cols) {
@@ -274,12 +275,20 @@ tidy.step_pca_truncated <- function(x, type = "coef", ...) {
       component = na_chr
     )
   } else {
-    type <- match.arg(type, c("coef", "variance"))
-    if (type == "coef") {
-      x$res <- x$res$rotation
-      res <- pca_coefs(x)
+    if (length(x$terms) == 0) {
+      res <- tibble(
+        terms = character(),
+        value = double(),
+        component = character()
+      )
     } else {
-      res <- pca_variances(x)
+      type <- match.arg(type, c("coef", "variance"))
+      if (type == "coef") {
+        x$res <- x$res$rotation
+        res <- pca_coefs(x)
+      } else {
+        res <- pca_variances(x)
+      }
     }
   }
   res$id <- x$id

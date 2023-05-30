@@ -68,42 +68,6 @@
        'x3'.
        This may cause errors when processing new data.
 
-# printing
-
-    Code
-      print_test
-    Message
-      
-      -- Recipe ----------------------------------------------------------------------
-      
-      -- Inputs 
-      Number of variables by role
-      outcome:   1
-      predictor: 3
-      
-      -- Operations 
-      * Linear embedding for factors via Bayesian GLM for: x3
-
----
-
-    Code
-      prep(print_test)
-    Condition
-    Message
-      
-      -- Recipe ----------------------------------------------------------------------
-      
-      -- Inputs 
-      Number of variables by role
-      outcome:   1
-      predictor: 3
-      
-      -- Training information 
-      Training data contained 500 data points and no incomplete rows.
-      
-      -- Operations 
-      * Linear embedding for factors via Bayesian GLM for: x3 | Trained
-
 # case weights
 
     Code
@@ -136,4 +100,75 @@
       
       -- Operations 
       * Linear embedding for factors via Bayesian GLM for: x3 | Trained, weighted
+
+# empty printing
+
+    Code
+      rec
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 10
+      
+      -- Operations 
+      * Linear embedding for factors via Bayesian GLM for: <none>
+
+---
+
+    Code
+      rec
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 10
+      
+      -- Training information 
+      Training data contained 32 data points and no incomplete rows.
+      
+      -- Operations 
+      * Linear embedding for factors via Bayesian GLM for: <none> | Trained
+
+# printing
+
+    Code
+      print(rec)
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:   1
+      predictor: 3
+      
+      -- Operations 
+      * Linear embedding for factors via Bayesian GLM for: x3
+
+---
+
+    Code
+      prep(rec)
+    Condition
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:   1
+      predictor: 3
+      
+      -- Training information 
+      Training data contained 500 data points and no incomplete rows.
+      
+      -- Operations 
+      * Linear embedding for factors via Bayesian GLM for: x3 | Trained
 

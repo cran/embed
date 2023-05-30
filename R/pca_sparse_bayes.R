@@ -81,7 +81,7 @@
 #' @template case-weights-not-supported
 #'
 #' @seealso [step_pca_sparse()]
-#' @examples
+#' @examplesIf rlang::is_installed(c("modeldata", "ggplot2"))
 #' library(recipes)
 #' library(ggplot2)
 #'
@@ -121,7 +121,6 @@ step_pca_sparse_bayes <- function(recipe,
                                   keep_original_cols = FALSE,
                                   skip = FALSE,
                                   id = rand_id("pca_sparse_bayes")) {
-  rlang::check_installed("VBsparsePCA")
 
   add_step(
     recipe,
@@ -180,6 +179,8 @@ prep.step_pca_sparse_bayes <- function(x, training, info = NULL, ...) {
     scale_param <- 1 / x$prior_slab_dispersion
 
     if (x$num_comp > 0) {
+      rlang::check_installed("VBsparsePCA")
+      
       cl <-
         rlang::call2(
           "VBsparsePCA",
@@ -228,7 +229,7 @@ bake.step_pca_sparse_bayes <- function(object, new_data, ...) {
     comps <- x %*% object$res
     comps <- as_tibble(comps)
     comps <- check_name(comps, new_data, object)
-    new_data <- bind_cols(new_data, comps)
+    new_data <- vec_cbind(new_data, comps)
     keep_original_cols <- get_keep_original_cols(object)
 
     if (!keep_original_cols) {
@@ -255,10 +256,18 @@ print.step_pca_sparse_bayes <-
 #' @export
 tidy.step_pca_sparse_bayes <- function(x, ...) {
   if (!is_trained(x)) {
-    term_names <- sel2char(x$terms)
-    res <- tibble(terms = term_names, value = na_dbl, component = na_chr)
+    terms_names <- sel2char(x$terms)
+    res <- tibble(terms = terms_names, value = na_dbl, component = na_chr)
   } else {
-    res <- pca_coefs(x)
+    if (length(x$terms) == 0) {
+      res <- tibble(
+        terms = character(),
+        value = double(),
+        component = character()
+      )
+    } else {
+      res <- pca_coefs(x)
+    }
   }
   res$id <- x$id
   res

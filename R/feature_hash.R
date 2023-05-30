@@ -216,7 +216,7 @@ bake.step_feature_hash <- function(object, new_data, ...) {
   
   new_cols <- check_name(new_cols, new_data, object, names(new_cols))
   
-  new_data <- bind_cols(new_data, new_cols)
+  new_data <- vec_cbind(new_data, new_cols)
 
   keep_original_cols <- get_keep_original_cols(object)
   if (!keep_original_cols) {
@@ -239,7 +239,7 @@ print.step_feature_hash <-
 #' @export
 tidy.step_feature_hash <- function(x, ...) {
   if (is_trained(x)) {
-    res <- tibble(terms = x$columns)
+    res <- tibble(terms = unname(x$columns))
   } else {
     term_names <- sel2char(x$terms)
     res <- tibble(terms = term_names)

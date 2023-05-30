@@ -13,13 +13,49 @@
       prep(rec, training = dat)
     Condition
       Error in `step_umap()`:
-      Caused by error in `check_name()`:
-      ! Name collision occured in `step_umap`. The following variable names already exists: UMAP1.
+      Caused by error in `bake()`:
+      ! Name collision occured. The following variable names already exists:
+      i  UMAP1
+
+# empty printing
+
+    Code
+      rec
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 10
+      
+      -- Operations 
+      * UMAP embedding for: <none>
+
+---
+
+    Code
+      rec
+    Message
+      
+      -- Recipe ----------------------------------------------------------------------
+      
+      -- Inputs 
+      Number of variables by role
+      outcome:    1
+      predictor: 10
+      
+      -- Training information 
+      Training data contained 32 data points and no incomplete rows.
+      
+      -- Operations 
+      * UMAP embedding for: <none> | Trained
 
 # printing
 
     Code
-      print_test
+      print(rec)
     Message
       
       -- Recipe ----------------------------------------------------------------------
@@ -34,7 +70,7 @@
 ---
 
     Code
-      prep(print_test)
+      prep(rec)
     Message
       
       -- Recipe ----------------------------------------------------------------------

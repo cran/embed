@@ -360,49 +360,6 @@ test_that("Works with passing family ", {
   )
 })
 
-test_that("bake method errors when needed non-standard role columns are missing", {
-  rec <- recipe(x2 ~ ., data = ex_dat) %>%
-    step_lencode_bayes(x3, outcome = vars(x2)) %>%
-    update_role(x3, new_role = "potato") %>%
-    update_role_requirements(role = "potato", bake = FALSE)
-
-  rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
-
-  expect_error(
-    bake(rec_trained, new_data = ex_dat[, -3]),
-    class = "new_data_missing_column"
-  )
-})
-
-test_that("printing", {
-  print_test <- recipe(x2 ~ ., data = ex_dat) %>%
-    step_lencode_bayes(x3,
-      outcome = vars(x2),
-      verbose = FALSE,
-      options = opts
-    )
-  expect_snapshot(print_test)
-  expect_snapshot(
-    prep(print_test),
-    transform = omit_warning("^(Bulk Effective|Tail Effective|The largest)")
-  )
-})
-
-test_that("empty selections", {
-  data(ad_data, package = "modeldata")
-  expect_error(
-    rec <-
-      recipe(Class ~ Genotype + tau, data = ad_data) %>%
-      step_lencode_bayes(starts_with("potato"), outcome = vars(Class)) %>%
-      prep(),
-    regexp = NA
-  )
-  expect_equal(
-    bake(rec, new_data = NULL),
-    ad_data %>% select(Genotype, tau, Class)
-  )
-})
-
 test_that("case weights", {
   skip_on_cran()
   skip_if_not_installed("rstanarm")
@@ -444,4 +401,81 @@ test_that("case weights", {
   )
 
   expect_snapshot(class_test)
+})
+
+# Infrastructure ---------------------------------------------------------------
+
+test_that("bake method errors when needed non-standard role columns are missing", {
+  skip_if_not_installed("rstanarm")
+  
+  rec <- recipe(x2 ~ ., data = ex_dat) %>%
+    step_lencode_bayes(x3, outcome = vars(x2)) %>%
+    update_role(x3, new_role = "potato") %>%
+    update_role_requirements(role = "potato", bake = FALSE)
+  
+  rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
+  
+  expect_error(
+    bake(rec_trained, new_data = ex_dat[, -3]),
+    class = "new_data_missing_column"
+  )
+})
+
+test_that("empty printing", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_lencode_bayes(rec, outcome = vars(mpg))
+  
+  expect_snapshot(rec)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_snapshot(rec)
+})
+
+test_that("empty selection prep/bake is a no-op", {
+  rec1 <- recipe(mpg ~ ., mtcars)
+  rec2 <- step_lencode_bayes(rec1, outcome = vars(mpg))
+  
+  rec1 <- prep(rec1, mtcars)
+  rec2 <- prep(rec2, mtcars)
+  
+  baked1 <- bake(rec1, mtcars)
+  baked2 <- bake(rec2, mtcars)
+  
+  expect_identical(baked1, baked2)
+})
+
+test_that("empty selection tidy method works", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_lencode_bayes(rec, outcome = vars(mpg))
+  
+  expect <- tibble(
+    terms = character(),
+    level = character(),
+    value = double(),
+    id = character()
+  )
+  
+  expect_identical(tidy(rec, number = 1), expect)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_identical(tidy(rec, number = 1), expect)
+})
+
+test_that("printing", {
+  skip_if_not_installed("rstanarm")
+  
+  rec <- recipe(x2 ~ ., data = ex_dat) %>%
+    step_lencode_bayes(x3,
+                       outcome = vars(x2),
+                       verbose = FALSE,
+                       options = opts
+    )
+  
+  expect_snapshot(print(rec))
+  expect_snapshot(
+    prep(rec),
+    transform = omit_warning("^(Bulk Effective|Tail Effective|The largest)")
+  )
 })

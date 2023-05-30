@@ -296,27 +296,6 @@ test_that("bad args", {
   )
 })
 
-test_that("bake method errors when needed non-standard role columns are missing", {
-  skip_on_cran()
-  skip_if(!is_tf_available())
-  rec <- recipe(x2 ~ ., data = ex_dat) %>%
-    step_embed(
-      x3,
-      outcome = vars(x2),
-      options = embed_control(verbose = 0),
-      id = "id"
-    ) %>%
-    update_role(x3, new_role = "potato") %>%
-    update_role_requirements(role = "potato", bake = FALSE)
-
-  rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
-
-  expect_error(
-    bake(rec_trained, new_data = ex_dat[, -3]),
-    class = "new_data_missing_column"
-  )
-})
-
 test_that("check_name() is used", {
   skip_on_cran()
   skip_if(!is_tf_available())
@@ -333,16 +312,6 @@ test_that("check_name() is used", {
   )
 })
 
-test_that("printing", {
-  skip_on_cran()
-  skip_if(!is_tf_available())
-
-  print_test <- recipe(x2 ~ ., data = ex_dat_ch) %>%
-    step_embed(x3, outcome = vars(x2))
-  expect_snapshot(print_test)
-  expect_snapshot(prep(print_test))
-})
-
 test_that("keep_original_cols works", {
   skip_on_cran()
   skip_if(!is_tf_available())
@@ -356,21 +325,6 @@ test_that("keep_original_cols works", {
   expect_equal(
     colnames(preds),
     c("x3", paste0("x3_embed_", 1:2))
-  )
-})
-
-test_that("empty selections", {
-  data(ad_data, package = "modeldata")
-  expect_error(
-    rec <-
-      recipe(Class ~ Genotype + tau, data = ad_data) %>%
-      step_embed(starts_with("potato"), outcome = vars(Class)) %>%
-      prep(),
-    regexp = NA
-  )
-  expect_equal(
-    bake(rec, new_data = NULL),
-    ad_data %>% select(Genotype, tau, Class)
   )
 })
 
@@ -390,6 +344,8 @@ test_that("tunable", {
 })
 
 test_that("tunable is setup to works with extract_parameter_set_dials works", {
+  skip_if_not_installed("dials")
+  
   rec <- recipe(~., data = mtcars) %>%
     step_embed(
       all_predictors(),
@@ -402,4 +358,83 @@ test_that("tunable is setup to works with extract_parameter_set_dials works", {
   
   expect_s3_class(params, "parameters")
   expect_identical(nrow(params), 2L)
+})
+
+# Infrastructure ---------------------------------------------------------------
+
+test_that("bake method errors when needed non-standard role columns are missing", {
+  skip_on_cran()
+  skip_if(!is_tf_available())
+  rec <- recipe(x2 ~ ., data = ex_dat) %>%
+    step_embed(
+      x3,
+      outcome = vars(x2),
+      options = embed_control(verbose = 0),
+      id = "id"
+    ) %>%
+    update_role(x3, new_role = "potato") %>%
+    update_role_requirements(role = "potato", bake = FALSE)
+  
+  rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
+  
+  expect_error(
+    bake(rec_trained, new_data = ex_dat[, -3]),
+    class = "new_data_missing_column"
+  )
+})
+
+test_that("empty printing", {
+  skip_on_cran()
+  skip_if(!is_tf_available())
+  
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_embed(rec, outcome = vars(mpg))
+  
+  expect_snapshot(rec)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_snapshot(rec)
+})
+
+test_that("empty selection prep/bake is a no-op", {
+  rec1 <- recipe(mpg ~ ., mtcars)
+  rec2 <- step_embed(rec1, outcome = vars(mpg))
+  
+  rec1 <- prep(rec1, mtcars)
+  rec2 <- prep(rec2, mtcars)
+  
+  baked1 <- bake(rec1, mtcars)
+  baked2 <- bake(rec2, mtcars)
+  
+  expect_identical(baked1, baked2)
+})
+
+test_that("empty selection tidy method works", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_embed(rec, outcome = vars(mpg))
+  
+  expect <- tibble(
+    terms = character(),
+    level = character(),
+    value = double(),
+    id = character()
+  )
+  
+  expect_identical(tidy(rec, number = 1), expect)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_identical(tidy(rec, number = 1), expect)
+})
+
+test_that("printing", {
+  skip_on_cran()
+  skip_if(!is_tf_available())
+  
+  rec <- recipe(x2 ~ ., data = ex_dat_ch) %>%
+    step_embed(x3, outcome = vars(x2))
+  
+  expect_snapshot(print(rec))
+  expect_snapshot(prep(rec))
 })

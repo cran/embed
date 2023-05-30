@@ -70,7 +70,7 @@
 #' "How UMAP Works"
 #' \url{https://umap-learn.readthedocs.io/en/latest/how_umap_works.html}
 #'
-#' @examples
+#' @examplesIf rlang::is_installed("ggplot2")
 #' library(recipes)
 #' library(ggplot2)
 #'
@@ -270,7 +270,7 @@ bake.step_umap <- function(object, new_data, ...) {
   res <- as_tibble(res)
   
   res <- check_name(res, new_data, object, names(res))
-  new_data <- bind_cols(new_data, res)
+  new_data <- vec_cbind(new_data, res)
 
   keep_original_cols <- get_keep_original_cols(object)
   if (!keep_original_cols) {
@@ -294,7 +294,11 @@ print.step_umap <-
 #' @export
 tidy.step_umap <- function(x, ...) {
   if (is_trained(x)) {
-    res <- tibble(terms = x$object$xnames)
+    if (length(x$object$xnames) == 0) {
+      res <- tibble(terms = character())
+    } else {
+      res <- tibble(terms = x$object$xnames)
+    }
   } else {
     term_names <- sel2char(x$terms)
     res <- tibble(terms = term_names)

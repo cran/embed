@@ -1,13 +1,5 @@
 source(testthat::test_path("test-helpers.R"))
 
-data("credit_data", package = "modeldata")
-
-set.seed(342)
-in_training <- sample(seq_len(nrow(credit_data)), 2000)
-
-credit_tr <- credit_data[in_training, ]
-credit_te <- credit_data[-in_training, ]
-
 set.seed(1)
 df <- data.frame(
   x1 = sample(c("A", "B", "C"), size = 20, replace = TRUE) %>% factor(),
@@ -161,6 +153,15 @@ test_that("add_woe do not accept dictionary with unexpected layout", {
 # step_woe ----------------------------------------------------------------
 
 test_that("step_woe", {
+  skip_if_not_installed("modeldata")
+  data("credit_data", package = "modeldata")
+  
+  set.seed(342)
+  in_training <- sample(seq_len(nrow(credit_data)), 2000)
+  
+  credit_tr <- credit_data[in_training, ]
+  credit_te <- credit_data[-in_training, ]
+  
   rec <-
     recipe(Status ~ ., data = credit_tr) %>%
     step_woe(Job, Home, outcome = vars(Status))
@@ -219,27 +220,6 @@ test_that("step_woe", {
   )
 })
 
-test_that("bake method errors when needed non-standard role columns are missing", {
-  rec <- recipe(Status ~ ., data = credit_tr) %>%
-    step_discretize(Price) %>%
-    update_role(Price, new_role = "potato") %>%
-    update_role_requirements(role = "potato", bake = FALSE)
-
-  rec_trained <- prep(rec, training = credit_tr, verbose = FALSE)
-
-  expect_error(
-    bake(rec_trained, new_data = credit_tr[, -14]),
-    class = "new_data_missing_column"
-  )
-})
-
-test_that("printing", {
-  woe_extract <- recipe(Status ~ ., data = credit_tr) %>%
-    step_woe(Job, Home, outcome = vars(Status))
-  expect_snapshot(woe_extract)
-  expect_snapshot(prep(woe_extract))
-})
-
 test_that("2-level factors", {
   iris3 <- iris
   iris3$group <- factor(rep(letters[1:5], each = 30))
@@ -271,21 +251,6 @@ test_that("woe_table respects factor levels", {
   )
 })
 
-test_that("empty selections", {
-  data(ad_data, package = "modeldata")
-  expect_error(
-    rec <-
-      recipe(Class ~ Genotype + tau, data = ad_data) %>%
-      step_woe(starts_with("potato"), outcome = "Class") %>%
-      prep(),
-    regexp = NA
-  )
-  expect_equal(
-    bake(rec, new_data = NULL),
-    ad_data %>% select(Genotype, tau, Class)
-  )
-})
-
 test_that("tunable", {
   rec <-
     recipe(~., data = mtcars) %>%
@@ -302,6 +267,8 @@ test_that("tunable", {
 })
 
 test_that("tunable is setup to works with extract_parameter_set_dials works", {
+  skip_if_not_installed("dials")
+  
   rec <- recipe(~., data = mtcars) %>%
     step_woe(
       all_predictors(),
@@ -313,4 +280,83 @@ test_that("tunable is setup to works with extract_parameter_set_dials works", {
   
   expect_s3_class(params, "parameters")
   expect_identical(nrow(params), 1L)
+})
+
+# Infrastructure ---------------------------------------------------------------
+
+test_that("bake method errors when needed non-standard role columns are missing", {
+  skip_if_not_installed("modeldata")
+  data("credit_data", package = "modeldata")
+
+  rec <- recipe(credit_data) %>%
+    step_woe(Job, Home, outcome = vars(Status)) %>%
+    update_role(Job, new_role = "potato") %>%
+    update_role_requirements(role = "potato", bake = FALSE)
+  
+  suppressWarnings(
+    rec_trained <- prep(rec, training = credit_data, verbose = FALSE)
+  )
+  
+  expect_error(
+    bake(rec_trained, new_data = credit_data[, -8]),
+    class = "new_data_missing_column"
+  )
+})
+
+test_that("empty printing", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_woe(rec, outcome = vars(mpg))
+  
+  expect_snapshot(rec)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_snapshot(rec)
+})
+
+test_that("empty selection prep/bake is a no-op", {
+  rec1 <- recipe(mpg ~ ., mtcars)
+  rec2 <- step_woe(rec1, outcome = vars(mpg))
+  
+  rec1 <- prep(rec1, mtcars)
+  rec2 <- prep(rec2, mtcars)
+  
+  baked1 <- bake(rec1, mtcars)
+  baked2 <- bake(rec2, mtcars)
+  
+  expect_identical(baked1, baked2)
+})
+
+test_that("empty selection tidy method works", {
+  rec <- recipe(mpg ~ ., mtcars)
+  rec <- step_woe(rec, outcome = vars(mpg))
+  
+  expect <- res <- tibble(
+    terms = character(),
+    value = character(),
+    n_tot = integer(),
+    n_bad = integer(),
+    n_good = integer(),
+    p_bad = double(),
+    p_good = double(),
+    woe = double(),
+    id = character()
+  )
+  
+  expect_identical(tidy(rec, number = 1), expect)
+  
+  rec <- prep(rec, mtcars)
+  
+  expect_identical(tidy(rec, number = 1), expect)
+})
+
+test_that("printing", {
+  skip_if_not_installed("modeldata")
+  data("credit_data", package = "modeldata")
+  
+  rec <- recipe(Status ~ ., data = credit_data) %>%
+    step_woe(Job, Home, outcome = vars(Status))
+  
+  expect_snapshot(print(rec))
+  expect_snapshot(prep(rec))
 })
