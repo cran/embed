@@ -36,10 +36,11 @@ predictors in a model.}
 \item{trained}{A logical to indicate if the quantities for preprocessing have
 been estimated.}
 
-\item{num_comp}{The number of PCA components to retain as new predictors. If
-\code{num_comp} is greater than the number of columns or the number of possible
-components, a smaller value will be used. A value of zero indicates that
-PCA will \emph{not} be used on the data.}
+\item{num_comp}{The number of components to retain as new predictors.
+If \code{num_comp} is greater than the number of columns or the number of
+possible components, a smaller value will be used. If \code{num_comp = 0}
+is set then no transformation is done and selected variables will
+stay unchanged, regardless of the value of \code{keep_original_cols}.}
 
 \item{prior_slab_dispersion}{This value is proportional to the dispersion (or
 scale) parameter for the slab portion of the prior. Smaller values result
@@ -97,14 +98,12 @@ This step will attempt to make the sign of the components more consistent
 from run-to-run. However, the sparsity constraint may interfere with this
 goal.
 
-The argument \code{num_comp} controls the number of components that will be
-retained (per default the original variables that are used to derive the
-components are removed from the data). The new components will have names
-that begin with \code{prefix} and a sequence of numbers. The variable names are
-padded with zeros. For example, if \code{num_comp < 10}, their names will be \code{PC1}
-\itemize{
-\item \code{PC9}. If \code{num_comp = 101}, the names would be \code{PC001} - \code{PC101}.
-}
+The argument \code{num_comp} controls the number of components that will be retained
+(the original variables that are used to derive the components are removed from
+the data). The new components will have names that begin with \code{prefix} and a
+sequence of numbers. The variable names are padded with zeros. For example, if
+\code{num_comp < 10}, their names will be \code{PC1} - \code{PC9}. If \code{num_comp = 101},
+the names would be \code{PC1} - \code{PC101}.
 }
 \section{Tidying}{
 When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns \code{terms}

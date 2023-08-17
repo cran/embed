@@ -1,7 +1,7 @@
 #' Supervised and unsupervised uniform manifold approximation and projection
 #' (UMAP)
 #'
-#' `step_umap` creates a *specification* of a recipe step that will project a
+#' `step_umap()` creates a *specification* of a recipe step that will project a
 #' set of features into a smaller space.
 #'
 #' @inheritParams recipes::step_pca
@@ -41,10 +41,11 @@
 #' representations of the data. It can be run unsupervised or supervised with
 #' different types of outcome data (e.g. numeric, factor, etc).
 #'
-#' The new components will have names that begin with `prefix` and a sequence of
-#' numbers. The variable names are padded with zeros. For example, if `num_comp
-#' < 10`, their names will be `UMAP1` - `UMAP9`. If `num_comp = 101`, the names
-#' would be `UMAP001` - `UMAP101`.
+#' ```{r, echo = FALSE, results="asis"}
+#' prefix <- "UMAP"
+#' result <- knitr::knit_child("man/rmd/num_comp.Rmd")
+#' cat(result)
+#' ```
 #'
 #' # Tidying
 #'
@@ -249,9 +250,10 @@ prep.step_umap <- function(x, training, info = NULL, ...) {
 
 #' @export
 bake.step_umap <- function(object, new_data, ...) {
-  check_new_data(names(object$object$xnames), object, new_data)
+  col_names <- names(object$object$xnames)
+  check_new_data(col_names, object, new_data)
 
-  if (length(object$object) == 0) {
+  if (length(col_names) == 0) {
     return(new_data)
   }
 
@@ -260,11 +262,13 @@ bake.step_umap <- function(object, new_data, ...) {
     res <-
       uwot::umap_transform(
         model = object$object,
-        X = new_data[, object$object$xnames]
+        X = new_data[, col_names]
       )
   )
 
-  if (is.null(object$prefix)) object$prefix <- "UMAP"
+  if (is.null(object$prefix)) {
+    object$prefix <- "UMAP"
+  }
 
   colnames(res) <- names0(object$num_comp, prefix = object$prefix)
   res <- as_tibble(res)
@@ -272,11 +276,7 @@ bake.step_umap <- function(object, new_data, ...) {
   res <- check_name(res, new_data, object, names(res))
   new_data <- vec_cbind(new_data, res)
 
-  keep_original_cols <- get_keep_original_cols(object)
-  if (!keep_original_cols) {
-    keep_cols <- !(colnames(new_data) %in% object$object$xnames)
-    new_data <- new_data[, keep_cols, drop = FALSE]
-  }
+  new_data <- remove_original_cols(new_data, object, col_names)
 
   new_data
 }

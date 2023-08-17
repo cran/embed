@@ -5,6 +5,7 @@
 #' zero coefficients.
 #'
 #' @inheritParams step_lencode_bayes
+#' @inheritParams recipes::step_pca
 #' @inherit step_lencode_bayes return
 #' @param ... One or more selector functions to choose which variables will be
 #'   used to compute the components. See [selections()] for more details. For
@@ -13,9 +14,6 @@
 #'   they be assigned? By default, the function assumes that the new principal
 #'   component columns created by the original variables will be used as
 #'   predictors in a model.
-#' @param num_comp The number of PCA components to retain as new predictors. If
-#'   `num_comp` is greater than the number of columns or the number of possible
-#'   components, a smaller value will be used.
 #' @param predictor_prop The maximum number of original predictors that can have
 #'   non-zero coefficients for each PCA component (via regularization).
 #' @param keep_original_cols A logical to keep the original variables in the
@@ -40,12 +38,11 @@
 #' function is used to encourage sparsity; that documentation has details about
 #' this method.
 #'
-#' The argument `num_comp` controls the number of components that will be
-#' retained (per default the original variables that are used to derive the
-#' components are removed from the data). The new components will have names
-#' that begin with `prefix` and a sequence of numbers. The variable names are
-#' padded with zeros. For example, if `num_comp < 10`, their names will be `PC1`
-#' - `PC9`. If `num_comp = 101`, the names would be `PC001` - `PC101`.
+#' ```{r, echo = FALSE, results="asis"}
+#' prefix <- "PC"
+#' result <- knitr::knit_child("man/rmd/num_comp.Rmd")
+#' cat(result)
+#' ```
 #'
 #' # Tidying
 #'
@@ -140,7 +137,7 @@ step_pca_sparse_new <-
 prep.step_pca_sparse <- function(x, training, info = NULL, ...) {
   col_names <- recipes_eval_select(x$terms, training, info)
 
-  if (length(col_names) > 0) {
+  if (length(col_names) > 0 && x$num_comp > 0) {
     check_type(training[, col_names], types = c("double", "integer"))
 
     p <- length(col_names)
@@ -197,21 +194,21 @@ prop2int <- function(x, p) {
 
 #' @export
 bake.step_pca_sparse <- function(object, new_data, ...) {
-  if (!all(is.na(object$res))) {
-    pca_vars <- rownames(object$res)
-    check_new_data(pca_vars, object, new_data)
-
-    x <- as.matrix(new_data[, pca_vars])
-    comps <- x %*% object$res
-    comps <- as_tibble(comps)
-    comps <- check_name(comps, new_data, object)
-    new_data <- vec_cbind(new_data, comps)
-    keep_original_cols <- get_keep_original_cols(object)
-
-    if (!keep_original_cols) {
-      new_data <- new_data[, !(colnames(new_data) %in% pca_vars), drop = FALSE]
-    }
+  if (all(is.na(object$res))) {
+    return(new_data) 
   }
+  
+  pca_vars <- rownames(object$res)
+  check_new_data(pca_vars, object, new_data)
+
+  x <- as.matrix(new_data[, pca_vars])
+  comps <- x %*% object$res
+  comps <- as_tibble(comps)
+  comps <- check_name(comps, new_data, object)
+  new_data <- vec_cbind(new_data, comps)
+  
+  new_data <- remove_original_cols(new_data, object, pca_vars)
+  
   new_data
 }
 

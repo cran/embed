@@ -1,23 +1,3 @@
-# factor encoded predictor
-
-    Code
-      new_values_ch <- bake(class_test, new_data = new_dat_ch, contains("embed"))
-    Condition
-      Warning:
-       There was 1 column that was a factor when the recipe was prepped:
-       'x3'.
-       This may cause errors when processing new data.
-
----
-
-    Code
-      new_values_ch <- bake(class_test, new_data = new_dat_ch, contains("embed"))
-    Condition
-      Warning:
-       There was 1 column that was a factor when the recipe was prepped:
-       'x3'.
-       This may cause errors when processing new data.
-
 # bad args
 
     Code
@@ -33,10 +13,8 @@
     Code
       prep(rec, training = dat)
     Condition
-      Error in `step_embed()`:
-      Caused by error in `bake()`:
-      ! Name collision occured. The following variable names already exists:
-      i  x3_embed_1
+      Error in `cnd_type()`:
+      ! `cnd` is not a condition object.
 
 # empty printing
 
@@ -73,15 +51,6 @@
       -- Operations 
       * Embedding of factors via tensorflow for: <none> | Trained
 
-# keep_original_cols - can prep recipes with it missing
-
-    Code
-      rec <- prep(rec)
-    Condition
-      Warning:
-      'keep_original_cols' was added to `step_embed()` after this recipe was created.
-      Regenerate your recipe to avoid this warning.
-
 # printing
 
     Code
@@ -97,23 +66,4 @@
       
       -- Operations 
       * Embedding of factors via tensorflow for: x3
-
----
-
-    Code
-      prep(rec)
-    Message
-      
-      -- Recipe ----------------------------------------------------------------------
-      
-      -- Inputs 
-      Number of variables by role
-      outcome:   1
-      predictor: 3
-      
-      -- Training information 
-      Training data contained 500 data points and no incomplete rows.
-      
-      -- Operations 
-      * Embedding of factors via tensorflow for: x3 | Trained
 

@@ -93,20 +93,17 @@ test_that("tunable", {
   )
 })
 
-test_that("tunable is setup to works with extract_parameter_set_dials works", {
-  skip_if_not_installed("dials")
+test_that("Do nothing for num_comps = 0 and keep_original_cols = FALSE", {
+  # https://github.com/tidymodels/recipes/issues/1152
   
-  rec <- recipe(~., data = mtcars) %>%
-    step_pca_sparse(
-      all_predictors(),
-      num_comp = hardhat::tune(),
-      predictor_prop = hardhat::tune()
-    )
+  rec <- recipe(carb ~ ., data = mtcars) %>%
+    step_pca_sparse(all_predictors(), 
+                    num_comp = 0, keep_original_cols = FALSE) %>%
+    prep()
   
-  params <- extract_parameter_set_dials(rec)
+  res <- bake(rec, new_data = NULL)
   
-  expect_s3_class(params, "parameters")
-  expect_identical(nrow(params), 2L)
+  expect_identical(res, tibble::as_tibble(mtcars))
 })
 
 # Infrastructure ---------------------------------------------------------------
@@ -182,6 +179,64 @@ test_that("empty selection tidy method works", {
   expect_identical(tidy(rec, number = 1), expect)
 })
 
+test_that("keep_original_cols works", {
+  skip_if_not_installed("VBsparsePCA")
+  skip_if_not_installed("modeldata")
+  
+  data(cells, package = "modeldata")
+  cells$case <- cells$class <- NULL
+  cells <- as.data.frame(scale(cells))
+  
+  new_names <- c("PC1")
+  
+  rec <- recipe(~., data = cells) %>%
+    step_pca_sparse(all_predictors(), num_comp = 1, predictor_prop = 1 / 2,
+                    keep_original_cols = FALSE)
+  
+  rec <- prep(rec)
+  res <- bake(rec, new_data = NULL)
+  
+  expect_equal(
+    colnames(res),
+    new_names
+  )
+  
+  rec <- recipe(~., data = cells) %>%
+    step_pca_sparse(all_predictors(), num_comp = 1, predictor_prop = 1 / 2,
+                    keep_original_cols = TRUE)
+  
+  rec <- prep(rec)
+  res <- bake(rec, new_data = NULL)
+  
+  expect_equal(
+    colnames(res),
+    c(names(cells), new_names)
+  )
+})
+
+test_that("keep_original_cols - can prep recipes with it missing", {
+  skip_if_not_installed("VBsparsePCA")
+  skip_if_not_installed("modeldata")
+  
+  data(cells, package = "modeldata")
+  cells$case <- cells$class <- NULL
+  cells <- as.data.frame(scale(cells))
+  
+  rec <- recipe(~., data = cells) %>%
+    step_pca_sparse(all_predictors(), num_comp = 1, predictor_prop = 1 / 2)
+  
+  rec$steps[[1]]$keep_original_cols <- NULL
+  
+  expect_snapshot(
+    rec <- prep(rec)
+  )
+  
+  expect_error(
+    bake(rec, new_data = cells),
+    NA
+  )
+})
+
 test_that("printing", {
   skip_if_not_installed("irlba")
   
@@ -190,4 +245,19 @@ test_that("printing", {
   
   expect_snapshot(print(rec))
   expect_snapshot(prep(rec))
+})
+
+test_that("tunable is setup to works with extract_parameter_set_dials", {
+  skip_if_not_installed("dials")
+  rec <- recipe(~., data = mtcars) %>%
+    step_pca_sparse(
+      all_predictors(),
+      num_comp = hardhat::tune(),
+      predictor_prop = hardhat::tune()
+    )
+  
+  params <- extract_parameter_set_dials(rec)
+  
+  expect_s3_class(params, "parameters")
+  expect_identical(nrow(params), 2L)
 })

@@ -186,45 +186,6 @@ test_that("no outcome", {
   )
 })
 
-test_that("keep_original_cols works", {
-  set.seed(11)
-  unsupervised <-
-    recipe(~., data = tr[, -5]) %>%
-    step_umap(all_predictors(),
-      num_comp = 3, min_dist = .2, learn_rate = .2,
-      keep_original_cols = TRUE
-    ) %>%
-    prep(training = tr[, -5])
-
-  umap_pred <- bake(unsupervised, new_data = te[, -5], composition = "matrix", all_predictors())
-
-  expect_equal(
-    colnames(umap_pred),
-    c(
-      "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width",
-      "UMAP1", "UMAP2", "UMAP3"
-    )
-  )
-})
-
-test_that("can prep recipes with no keep_original_cols", {
-  set.seed(11)
-  unsupervised <-
-    recipe(~., data = tr[, -5]) %>%
-    step_umap(all_predictors(), num_comp = 3, min_dist = .2, learn_rate = .2)
-
-  unsupervised$steps[[1]]$keep_original_cols <- NULL
-
-  expect_snapshot(
-    umap_pred <- prep(unsupervised, training = tr[, -5], verbose = FALSE)
-  )
-
-  expect_error(
-    umap_pred <- bake(umap_pred, new_data = te[, -5], all_predictors()),
-    NA
-  )
-})
-
 test_that("check_name() is used", {
   dat <- tr
   dat$UMAP1 <- dat$Species
@@ -254,25 +215,6 @@ test_that("tunable", {
     names(rec_param),
     c("name", "call_info", "source", "component", "component_id")
   )
-})
-
-test_that("tunable is setup to works with extract_parameter_set_dials works", {
-  skip_if_not_installed("dials")
-  
-  rec <- recipe(~., data = mtcars) %>%
-    step_umap(
-      all_predictors(),
-      num_comp = hardhat::tune(),
-      neighbors = hardhat::tune(),
-      min_dist = hardhat::tune(),
-      learn_rate = hardhat::tune(),
-      epochs = hardhat::tune()
-    )
-  
-  params <- extract_parameter_set_dials(rec)
-  
-  expect_s3_class(params, "parameters")
-  expect_identical(nrow(params), 5L)
 })
 
 # Infrastructure ---------------------------------------------------------------
@@ -328,10 +270,75 @@ test_that("empty selection tidy method works", {
   expect_identical(tidy(rec, number = 1), expect)
 })
 
+
+test_that("keep_original_cols works", {
+  new_names <- c("UMAP1", "UMAP2", "UMAP3")
+  
+  rec <- recipe(~., data = tr[, -5]) %>%
+    step_umap(all_predictors(),
+              num_comp = 3, min_dist = .2, learn_rate = .2,
+              keep_original_cols = FALSE)
+  
+  rec <- prep(rec)
+  res <- bake(rec, new_data = NULL)
+  
+  expect_equal(
+    colnames(res),
+    new_names
+  )
+  
+  rec <- recipe(~., data = tr[, -5]) %>%
+    step_umap(all_predictors(),
+              num_comp = 3, min_dist = .2, learn_rate = .2,
+              keep_original_cols = TRUE)
+  
+  rec <- prep(rec)
+  res <- bake(rec, new_data = NULL)
+  
+  expect_equal(
+    colnames(res),
+    c("Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", new_names)
+  )
+})
+
+test_that("keep_original_cols - can prep recipes with it missing", {
+  rec <- recipe(~ mpg, mtcars) %>%
+    step_pca(all_predictors())
+  
+  rec$steps[[1]]$keep_original_cols <- NULL
+  
+  expect_snapshot(
+    rec <- prep(rec)
+  )
+  
+  expect_error(
+    bake(rec, new_data = mtcars),
+    NA
+  )
+})
+
 test_that("printing", {
   rec <- recipe(~., data = tr[, -5]) %>%
     step_umap(all_predictors())
   
   expect_snapshot(print(rec))
   expect_snapshot(prep(rec))
+})
+
+test_that("tunable is setup to works with extract_parameter_set_dials", {
+  skip_if_not_installed("dials")
+  rec <- recipe(~., data = mtcars) %>%
+    step_umap(
+      all_predictors(),
+      num_comp = hardhat::tune(),
+      neighbors = hardhat::tune(),
+      min_dist = hardhat::tune(),
+      learn_rate = hardhat::tune(),
+      epochs = hardhat::tune()
+    )
+  
+  params <- extract_parameter_set_dials(rec)
+  
+  expect_s3_class(params, "parameters")
+  expect_identical(nrow(params), 5L)
 })

@@ -266,22 +266,6 @@ test_that("tunable", {
   )
 })
 
-test_that("tunable is setup to works with extract_parameter_set_dials works", {
-  skip_if_not_installed("dials")
-  
-  rec <- recipe(~., data = mtcars) %>%
-    step_woe(
-      all_predictors(),
-      outcome = "mpg",
-      Laplace = hardhat::tune()
-    )
-  
-  params <- extract_parameter_set_dials(rec)
-  
-  expect_s3_class(params, "parameters")
-  expect_identical(nrow(params), 1L)
-})
-
 # Infrastructure ---------------------------------------------------------------
 
 test_that("bake method errors when needed non-standard role columns are missing", {
@@ -350,6 +334,54 @@ test_that("empty selection tidy method works", {
   expect_identical(tidy(rec, number = 1), expect)
 })
 
+test_that("keep_original_cols works", {
+  skip_if_not_installed("modeldata")
+  data("ames", package = "modeldata")
+  
+  new_names <- c("Street", "woe_Alley")
+  
+  rec <- recipe(Street ~ Alley, data = ames) %>%
+    step_woe(Alley, outcome = vars(Street), keep_original_cols = FALSE)
+
+  rec <- prep(rec)
+  res <- bake(rec, new_data = NULL)
+  
+  expect_equal(
+    colnames(res),
+    new_names
+  )
+  
+  rec <- recipe(Street ~ Alley, data = ames) %>%
+    step_woe(Alley, outcome = vars(Street), keep_original_cols = TRUE)
+  
+  rec <- prep(rec)
+  res <- bake(rec, new_data = NULL)
+  
+  expect_equal(
+    colnames(res),
+    c("Alley", new_names)
+  )
+})
+
+test_that("keep_original_cols - can prep recipes with it missing", {
+  skip_if_not_installed("modeldata")
+  data("ames", package = "modeldata")
+  
+  rec <- recipe(Street ~ Alley, data = ames) %>%
+    step_woe(Alley, outcome = vars(Street), keep_original_cols = FALSE)
+  
+  rec$steps[[1]]$keep_original_cols <- NULL
+  
+  expect_snapshot(
+    rec <- prep(rec)
+  )
+  
+  expect_error(
+    bake(rec, new_data = ames),
+    NA
+  )
+})
+
 test_that("printing", {
   skip_if_not_installed("modeldata")
   data("credit_data", package = "modeldata")
@@ -359,4 +391,19 @@ test_that("printing", {
   
   expect_snapshot(print(rec))
   expect_snapshot(prep(rec))
+})
+
+test_that("tunable is setup to works with extract_parameter_set_dials", {
+  skip_if_not_installed("dials")
+  rec <- recipe(~., data = mtcars) %>%
+    step_woe(
+      all_predictors(),
+      outcome = "mpg",
+      Laplace = hardhat::tune()
+    )
+  
+  params <- extract_parameter_set_dials(rec)
+  
+  expect_s3_class(params, "parameters")
+  expect_identical(nrow(params), 1L)
 })

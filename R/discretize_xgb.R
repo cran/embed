@@ -1,6 +1,6 @@
 #' Discretize numeric variables with XgBoost
 #'
-#' `step_discretize_xgb` creates a *specification* of a recipe step that will
+#' `step_discretize_xgb()` creates a *specification* of a recipe step that will
 #' discretize numeric data (e.g. integers or doubles) into bins in a supervised
 #' way using an XgBoost model.
 #'
@@ -74,25 +74,6 @@
 #'
 #' @template case-weights-supervised
 #'
-#' @examplesIf rlang::is_installed(c("xgboost", "modeldata"))
-#' library(rsample)
-#' library(recipes)
-#' data(credit_data, package = "modeldata")
-#'
-#' set.seed(1234)
-#' split <- initial_split(credit_data[1:1000, ], strata = "Status")
-#'
-#' credit_data_tr <- training(split)
-#' credit_data_te <- testing(split)
-#'
-#' xgb_rec <-
-#'   recipe(Status ~ Income + Assets, data = credit_data_tr) %>%
-#'   step_impute_median(Income, Assets) %>%
-#'   step_discretize_xgb(Income, Assets, outcome = "Status")
-#'
-#' xgb_rec <- prep(xgb_rec, training = credit_data_tr)
-#'
-#' bake(xgb_rec, credit_data_te, Assets)
 #' @seealso [embed::step_discretize_cart()], [recipes::recipe()],
 #' [recipes::prep()], [recipes::bake()]
 #' @export
@@ -249,13 +230,15 @@ xgb_binning <- function(df, outcome, predictor, sample_val, learn_rate,
     xgb_train <- xgboost::xgb.DMatrix(
       data = as.matrix(train[[predictor]], ncol = 1),
       label = train[[outcome]],
-      weight = wts_train
+      weight = wts_train,
+      nthread = 1
     )
 
     xgb_test <- xgboost::xgb.DMatrix(
       data = as.matrix(test[[predictor]], ncol = 1),
       label = test[[outcome]],
-      weight = wts_test
+      weight = wts_test,
+      nthread = 1
     )
   } else {
     if (length(levels) == 2) {
@@ -264,13 +247,15 @@ xgb_binning <- function(df, outcome, predictor, sample_val, learn_rate,
       xgb_train <- xgboost::xgb.DMatrix(
         data = as.matrix(train[[predictor]], ncol = 1),
         label = ifelse(train[[outcome]] == levels[[1]], 0, 1),
-        weight = wts_train
+        weight = wts_train,
+        nthread = 1
       )
 
       xgb_test <- xgboost::xgb.DMatrix(
         data = as.matrix(test[[predictor]], ncol = 1),
         label = ifelse(test[[outcome]] == levels[[1]], 0, 1),
-        weight = wts_test
+        weight = wts_test,
+        nthread = 1
       )
     } else if (length(levels) >= 3) {
       objective <- "multi:softprob" # returning estimated probability
@@ -279,13 +264,15 @@ xgb_binning <- function(df, outcome, predictor, sample_val, learn_rate,
       xgb_train <- xgboost::xgb.DMatrix(
         data = as.matrix(train[[predictor]], ncol = 1),
         label = train[[outcome]],
-        weight = wts_train
+        weight = wts_train,
+        nthread = 1
       )
 
       xgb_test <- xgboost::xgb.DMatrix(
         data = as.matrix(test[[predictor]], ncol = 1),
         label = test[[outcome]],
-        weight = wts_test
+        weight = wts_test,
+        nthread = 1
       )
     } else {
       rlang::abort(

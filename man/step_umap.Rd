@@ -100,7 +100,7 @@ An updated version of \code{recipe} with the new step added to the
 sequence of any existing operations.
 }
 \description{
-\code{step_umap} creates a \emph{specification} of a recipe step that will project a
+\code{step_umap()} creates a \emph{specification} of a recipe step that will project a
 set of features into a smaller space.
 }
 \details{
@@ -109,9 +109,12 @@ dimension reduction technique that finds local, low-dimensional
 representations of the data. It can be run unsupervised or supervised with
 different types of outcome data (e.g. numeric, factor, etc).
 
-The new components will have names that begin with \code{prefix} and a sequence of
-numbers. The variable names are padded with zeros. For example, if \code{num_comp < 10}, their names will be \code{UMAP1} - \code{UMAP9}. If \code{num_comp = 101}, the names
-would be \code{UMAP001} - \code{UMAP101}.
+The argument \code{num_comp} controls the number of components that will be retained
+(the original variables that are used to derive the components are removed from
+the data). The new components will have names that begin with \code{prefix} and a
+sequence of numbers. The variable names are padded with zeros. For example, if
+\code{num_comp < 10}, their names will be \code{UMAP1} - \code{UMAP9}. If \code{num_comp = 101},
+the names would be \code{UMAP1} - \code{UMAP101}.
 }
 \section{Tidying}{
 When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns \code{terms}

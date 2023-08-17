@@ -12,6 +12,3 @@ A logical
 \description{
 Test to see if tensorflow is available
 }
-\examples{
-is_tf_available()
-}

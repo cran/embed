@@ -1,10 +1,10 @@
 #' Encoding Factors into Multiple Columns
 #'
-#' `step_embed` creates a *specification* of a recipe step that will convert a
+#' `step_embed()` creates a *specification* of a recipe step that will convert a
 #' nominal (i.e. factor) predictor into a set of scores derived from a
 #' tensorflow model via a word-embedding model. `embed_control` is a simple
 #' wrapper for setting default options.
-#'
+#' 
 #' @param recipe A recipe object. The step will be added to the sequence of
 #'   operations for this recipe.
 #' @param ... One or more selector functions to choose variables. For
@@ -122,17 +122,6 @@
 #' "Concatenate Embeddings for Categorical Variables with Keras"
 #' \url{https://flovv.github.io/Embeddings_with_keras_part2/}
 #'
-#' @examplesIf is_tf_available() && rlang::is_installed("modeldata")
-#' data(grants, package = "modeldata")
-#'
-#' set.seed(1)
-#' grants_other <- sample_n(grants_other, 500)
-#'
-#' rec <- recipe(class ~ num_ci + sponsor_code, data = grants_other) %>%
-#'   step_embed(sponsor_code,
-#'     outcome = vars(class),
-#'     options = embed_control(epochs = 10)
-#'   )
 #' @export
 step_embed <-
   function(recipe,
@@ -411,21 +400,23 @@ map_tf_coef2 <- function(dat, mapping, prefix) {
 
 #' @export
 bake.step_embed <- function(object, new_data, ...) {
-  check_new_data(names(object$mapping), object, new_data)
+  col_names <- names(object$mapping)
+  check_new_data(col_names, object, new_data)
 
-  for (col in names(object$mapping)) {
-    tmp <- map_tf_coef2(new_data[, col], object$mapping[[col]], prefix = col)
+  for (col_name in col_names) {
+    tmp <- map_tf_coef2(
+      dat = new_data[, col_name], # map_tf_coef2() expects a tibble
+      mapping = object$mapping[[col_name]], 
+      prefix = col_name
+    )
    
     tmp <- check_name(tmp, new_data, object, names(tmp))
     
     new_data <- vec_cbind(new_data, tmp)
   }
   
-  keep_original_cols <- get_keep_original_cols(object)
-  if (!keep_original_cols) {
-    new_data <- new_data[, !(names(new_data) %in% names(object$mapping))]
-  }
-
+  new_data <- remove_original_cols(new_data, object, col_names)
+  
   new_data
 }
 
@@ -532,8 +523,6 @@ class2ind <- function(x) {
 #' Test to see if tensorflow is available
 #'
 #' @return A logical
-#' @examples
-#' is_tf_available()
 #' @export
 is_tf_available <- function() {
   if (!rlang::is_installed("tensorflow")) {

@@ -2,7 +2,7 @@
 #'
 #' @description `r lifecycle::badge("soft-deprecated")`
 #'
-#'   `step_feature_hash` is being deprecated in favor of
+#'   `step_feature_hash()` is being deprecated in favor of
 #'   [textrecipes::step_dummy_hash()]. This function creates a *specification*
 #'   of a recipe step that will convert nominal data (e.g. character or factors)
 #'   into one or more numeric binary columns using the levels of the original
@@ -50,22 +50,6 @@
 #' Approach for Predictive Models_. CRC/Chapman Hall
 #' \url{https://bookdown.org/max/FES/encoding-predictors-with-many-categories.html}
 #' @seealso [recipes::step_dummy()], [recipes::step_zv()]
-#' @examplesIf is_tf_available() && rlang::is_installed("modeldata")
-#' data(grants, package = "modeldata")
-#' rec <-
-#'   recipe(class ~ sponsor_code, data = grants_other) %>%
-#'   step_feature_hash(
-#'     sponsor_code,
-#'     num_hash = 2^6, keep_original_cols = TRUE
-#'   ) %>%
-#'   prep()
-#'
-#' # How many of the 298 locations ended up in each hash column?
-#' results <-
-#'   bake(rec, new_data = NULL, starts_with("sponsor_code")) %>%
-#'   distinct()
-#'
-#' apply(results %>% select(-sponsor_code), 2, sum) %>% table()
 #' @export
 step_feature_hash <-
   function(recipe,
@@ -198,17 +182,18 @@ make_hash_tbl <- function(ind, nms) {
 
 #' @export
 bake.step_feature_hash <- function(object, new_data, ...) {
-  check_new_data(names(object$columns), object, new_data)
+  col_names <- names(object$columns)
+  check_new_data(col_names, object, new_data)
 
   # If no terms were selected
-  if (length(object$columns) == 0) {
+  if (length(col_names) == 0) {
     return(new_data)
   }
 
-  new_names <- paste0(object$columns, "_hash_")
+  new_names <- paste0(col_names, "_hash_")
 
   new_cols <- purrr::map2_dfc(
-    new_data[, object$columns],
+    new_data[, col_names],
     new_names, make_hash_vars,
     num_hash =
       object$num_hash
@@ -218,10 +203,7 @@ bake.step_feature_hash <- function(object, new_data, ...) {
   
   new_data <- vec_cbind(new_data, new_cols)
 
-  keep_original_cols <- get_keep_original_cols(object)
-  if (!keep_original_cols) {
-    new_data <- new_data %>% dplyr::select(-one_of(!!!object$columns))
-  }
+  new_data <- remove_original_cols(new_data, object, col_names)
 
   new_data
 }

@@ -5,6 +5,9 @@ source(testthat::test_path("test-helpers.R"))
 # tensorflow::tf$config$get_visible_devices("CPU") %>%
 #   tensorflow::tf$config$set_visible_devices()
 
+# Stops noisy tensorflow messages
+withr::local_envvar(TF_CPP_MIN_LOG_LEVEL = "2")
+
 test_that("factor encoded predictor", {
   skip_on_cran()
   skip_if(!is_tf_available())
@@ -312,22 +315,6 @@ test_that("check_name() is used", {
   )
 })
 
-test_that("keep_original_cols works", {
-  skip_on_cran()
-  skip_if(!is_tf_available())
-  
-  rec <- recipe(x2 ~ x3, data = ex_dat_ch) %>%
-    step_embed(x3, outcome = vars(x2), keep_original_cols = TRUE)
-  
-  rec_trained <- prep(rec, training = ex_dat_ch, verbose = FALSE)
-  preds <- bake(rec_trained, new_data = ex_dat_ch, all_predictors())
-  
-  expect_equal(
-    colnames(preds),
-    c("x3", paste0("x3_embed_", 1:2))
-  )
-})
-
 test_that("tunable", {
   rec <-
     recipe(~., data = mtcars) %>%
@@ -341,23 +328,6 @@ test_that("tunable", {
     names(rec_param),
     c("name", "call_info", "source", "component", "component_id")
   )
-})
-
-test_that("tunable is setup to works with extract_parameter_set_dials works", {
-  skip_if_not_installed("dials")
-  
-  rec <- recipe(~., data = mtcars) %>%
-    step_embed(
-      all_predictors(),
-      outcome = "mpg",
-      num_terms = hardhat::tune(),
-      hidden_units = hardhat::tune()
-    )
-  
-  params <- extract_parameter_set_dials(rec)
-  
-  expect_s3_class(params, "parameters")
-  expect_identical(nrow(params), 2L)
 })
 
 # Infrastructure ---------------------------------------------------------------
@@ -428,6 +398,56 @@ test_that("empty selection tidy method works", {
   expect_identical(tidy(rec, number = 1), expect)
 })
 
+test_that("keep_original_cols works", {
+  skip_on_cran()
+  skip_if(!is_tf_available())
+  
+  new_names <- c("x2", "x3_embed_1", "x3_embed_2")
+  
+  rec <- recipe(x2 ~ x3, data = ex_dat) %>%
+    step_embed(x3, outcome = vars(x2), options = embed_control(verbose = 0),
+               keep_original_cols = FALSE)
+  
+  rec <- prep(rec)
+  res <- bake(rec, new_data = NULL)
+  
+  expect_equal(
+    colnames(res),
+    new_names
+  )
+  
+  rec <- recipe(x2 ~ x3, data = ex_dat) %>%
+    step_embed(x3, outcome = vars(x2), options = embed_control(verbose = 0),
+               keep_original_cols = TRUE)
+  
+  rec <- prep(rec)
+  res <- bake(rec, new_data = NULL)
+  
+  expect_equal(
+    colnames(res),
+    c("x3", new_names)
+  )
+})
+
+test_that("keep_original_cols - can prep recipes with it missing", {
+  skip_on_cran()
+  skip_if(!is_tf_available())
+  
+  rec <- recipe(x2 ~ x3, data = ex_dat) %>%
+    step_embed(x3, outcome = vars(x2), options = embed_control(verbose = 0))
+  
+  rec$steps[[1]]$keep_original_cols <- NULL
+  
+  expect_snapshot(
+    rec <- prep(rec)
+  )
+  
+  expect_error(
+    bake(rec, new_data = ex_dat),
+    NA
+  )
+})
+
 test_that("printing", {
   skip_on_cran()
   skip_if(!is_tf_available())
@@ -437,4 +457,20 @@ test_that("printing", {
   
   expect_snapshot(print(rec))
   expect_snapshot(prep(rec))
+})
+
+test_that("tunable is setup to works with extract_parameter_set_dials", {
+  skip_if_not_installed("dials")
+  rec <- recipe(~., data = mtcars) %>%
+    step_embed(
+      all_predictors(),
+      outcome = "mpg",
+      num_terms = hardhat::tune(),
+      hidden_units = hardhat::tune()
+    )
+  
+  params <- extract_parameter_set_dials(rec)
+  
+  expect_s3_class(params, "parameters")
+  expect_identical(nrow(params), 2L)
 })

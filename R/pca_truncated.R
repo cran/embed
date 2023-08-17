@@ -1,6 +1,6 @@
 #' Truncated PCA Signal Extraction
 #'
-#' `step_pca_truncated` creates a *specification* of a recipe step that will
+#' `step_pca_truncated()` creates a *specification* of a recipe step that will
 #' convert numeric data into one or more principal components. It is truncated
 #' as it only calculates the number of components it is asked instead of all of
 #' them as is done in [recipes::step_pca()].
@@ -27,13 +27,12 @@
 #' be changed using the `options` argument or by using [step_center()] and
 #' [step_scale()].
 #'
-#' The argument `num_comp` controls the number of components that will be
-#' retained (the original variables that are used to derive the components are
-#' removed from the data). The new components will have names that begin with
-#' `prefix` and a sequence of numbers. The variable names are padded with zeros.
-#' For example, if `num_comp < 10`, their names will be `PC1` - `PC9`. If
-#' `num_comp = 101`, the names would be `PC001` - `PC101`.
-#'
+#' ```{r, echo = FALSE, results="asis"}
+#' prefix <- "PC"
+#' result <- knitr::knit_child("man/rmd/num_comp.Rmd")
+#' cat(result)
+#' ```
+#' 
 #' # Tidying
 #'
 #' When you [`tidy()`][tidy.recipe()] this step, use either `type = "coef"` for
@@ -148,12 +147,13 @@ prep.step_pca_truncated <- function(x, training, info = NULL, ...) {
     } else {
       prc_obj <- recipes::pca_wts(training[, col_names, drop = FALSE], wts = wts)
     }
+    rownames(prc_obj$rotation) <- col_names
   } else {
     prc_obj <- NULL
     prc_obj$rotation <- matrix(nrow = 0, ncol = 0)
   }
 
-  rownames(prc_obj$rotation) <- col_names
+  
 
   if (is.null(prc_obj$center)) {
     prc_obj$center <- FALSE
@@ -177,26 +177,25 @@ prep.step_pca_truncated <- function(x, training, info = NULL, ...) {
 
 #' @export
 bake.step_pca_truncated <- function(object, new_data, ...) {
-  if (is.null(object$columns)) {
-    object$columns <- stats::setNames(nm = rownames(object$res$rotation))
+  col_names <- names(object$columns) %||% 
+    stats::setNames(nm = rownames(object$res$rotation))
+
+  if (length(col_names) == 0 || all(is.na(object$res$rotation))) {
+    return(new_data)
   }
+  
+  check_new_data(col_names, object, new_data)
 
-  if (length(object$columns) > 0 && !all(is.na(object$res$rotation))) {
-    check_new_data(object$columns, object, new_data)
+  pca_vars <- rownames(object$res$rotation)
+  comps <- scale(new_data[, pca_vars], object$res$center, object$res$scale) %*%
+    object$res$rotation
+  comps <- comps[, 1:object$num_comp, drop = FALSE]
+  comps <- as_tibble(comps)
+  comps <- check_name(comps, new_data, object)
+  new_data <- vec_cbind(new_data, comps)
 
-    pca_vars <- rownames(object$res$rotation)
-    comps <- scale(new_data[, pca_vars], object$res$center, object$res$scale) %*%
-      object$res$rotation
-    comps <- comps[, 1:object$num_comp, drop = FALSE]
-    comps <- as_tibble(comps)
-    comps <- check_name(comps, new_data, object)
-    new_data <- vec_cbind(new_data, comps)
-    keep_original_cols <- get_keep_original_cols(object)
-
-    if (!keep_original_cols) {
-      new_data <- new_data[, !(colnames(new_data) %in% pca_vars), drop = FALSE]
-    }
-  }
+  new_data <- remove_original_cols(new_data, object, pca_vars)
+  
   new_data
 }
 

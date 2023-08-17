@@ -92,7 +92,7 @@ columns \code{terms} (the selectors or variables for encoding), \code{level} (th
 factor levels), and several columns containing \code{embed} in the name.
 }
 \description{
-\code{step_embed} creates a \emph{specification} of a recipe step that will convert a
+\code{step_embed()} creates a \emph{specification} of a recipe step that will convert a
 nominal (i.e. factor) predictor into a set of scores derived from a
 tensorflow model via a word-embedding model. \code{embed_control} is a simple
 wrapper for setting default options.
@@ -171,20 +171,6 @@ This step has 2 tuning parameters:
 The underlying operation does not allow for case weights.
 }
 
-\examples{
-\dontshow{if (is_tf_available() && rlang::is_installed("modeldata")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-data(grants, package = "modeldata")
-
-set.seed(1)
-grants_other <- sample_n(grants_other, 500)
-
-rec <- recipe(class ~ num_ci + sponsor_code, data = grants_other) \%>\%
-  step_embed(sponsor_code,
-    outcome = vars(class),
-    options = embed_control(epochs = 10)
-  )
-\dontshow{\}) # examplesIf}
-}
 \references{
 Francois C and Allaire JJ (2018) \emph{Deep Learning with R}, Manning
 

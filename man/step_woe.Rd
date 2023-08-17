@@ -13,6 +13,7 @@ step_woe(
   dictionary = NULL,
   Laplace = 1e-06,
   prefix = "woe",
+  keep_original_cols = FALSE,
   skip = FALSE,
   id = rand_id("woe")
 )
@@ -48,6 +49,9 @@ parameter of the Laplace smoothing technique.}
 \item{prefix}{A character string that will be the prefix to the resulting new
 variables. See notes below.}
 
+\item{keep_original_cols}{A logical to keep the original variables in the
+output. Defaults to \code{FALSE}.}
+
 \item{skip}{A logical. Should the step be skipped when the recipe is baked by
 \code{\link[recipes:bake]{recipes::bake()}}? While all operations are baked when \code{\link[recipes:prep]{recipes::prep()}} is
 run, some operations may not be able to be conducted on new data (e.g.
@@ -61,7 +65,7 @@ sequence of existing steps (if any). For the \code{tidy} method, a tibble with
 the woe dictionary used to map categories with woe values.
 }
 \description{
-\code{step_woe} creates a \emph{specification} of a recipe step that will transform
+\code{step_woe()} creates a \emph{specification} of a recipe step that will transform
 nominal data into its numerical transformation based on weights of evidence
 against a binary outcome.
 }

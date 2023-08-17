@@ -1,10 +1,11 @@
 #' Weight of evidence transformation
 #'
-#' `step_woe` creates a *specification* of a recipe step that will transform
+#' `step_woe()` creates a *specification* of a recipe step that will transform
 #' nominal data into its numerical transformation based on weights of evidence
 #' against a binary outcome.
 #'
 #' @inheritParams step_lencode_bayes
+#' @inheritParams recipes::step_pca
 #' @inherit step_center return
 #' @param ... One or more selector functions to choose which variables will be
 #'   used to compute the components. See [selections()] for more details. For
@@ -13,7 +14,6 @@
 #'   they be assigned?. By default, the function assumes that the new woe
 #'   components columns created by the original variables will be used as
 #'   predictors in a model.
-#' @param outcome The bare name of the binary outcome encased in `vars()`.
 #' @param outcome The bare name of the binary outcome encased in `vars()`.
 #' @param dictionary A tbl. A map of levels and woe values. It must have the
 #'   same layout than the output returned from [dictionary()]. If `NULL`` the
@@ -135,6 +135,7 @@ step_woe <- function(recipe,
                      dictionary = NULL,
                      Laplace = 1e-6,
                      prefix = "woe",
+                     keep_original_cols = FALSE,
                      skip = FALSE,
                      id = rand_id("woe")) {
   if (missing(outcome)) {
@@ -151,6 +152,7 @@ step_woe <- function(recipe,
       dictionary = dictionary,
       Laplace = Laplace,
       prefix = prefix,
+      keep_original_cols = keep_original_cols,
       skip = skip,
       id = id
     )
@@ -159,7 +161,7 @@ step_woe <- function(recipe,
 
 ## Initializes a new object
 step_woe_new <- function(terms, role, trained, outcome, dictionary, Laplace,
-                         prefix, skip, id) {
+                         prefix, keep_original_cols, skip, id) {
   step(
     subclass = "woe",
     terms = terms,
@@ -169,6 +171,7 @@ step_woe_new <- function(terms, role, trained, outcome, dictionary, Laplace,
     dictionary = dictionary,
     Laplace = Laplace,
     prefix = prefix,
+    keep_original_cols = keep_original_cols,
     skip = skip,
     id = id
   )
@@ -446,6 +449,7 @@ prep.step_woe <- function(x, training, info = NULL, ...) {
     dictionary = x$dictionary,
     Laplace = x$Laplace,
     prefix = x$prefix,
+    keep_original_cols = get_keep_original_cols(x),
     skip = x$skip,
     id = x$id
   )
@@ -454,9 +458,9 @@ prep.step_woe <- function(x, training, info = NULL, ...) {
 #' @export
 bake.step_woe <- function(object, new_data, ...) {
   dict <- object$dictionary
-  woe_vars <- unique(dict[["variable"]])
+  col_names <- unique(dict[["variable"]])
 
-  check_new_data(woe_vars, object, new_data)
+  check_new_data(col_names, object, new_data)
 
   if (nrow(object$dictionary) == 0) {
     return(new_data)
@@ -468,7 +472,9 @@ bake.step_woe <- function(object, new_data, ...) {
     dictionary = dict,
     prefix = object$prefix
   )
-  new_data <- new_data[, !(colnames(new_data) %in% woe_vars), drop = FALSE]
+  
+  new_data <- remove_original_cols(new_data, object, col_names)
+  
   new_data
 }
 

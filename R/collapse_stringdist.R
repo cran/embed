@@ -1,6 +1,6 @@
 #' collapse factor levels using stringdist
 #'
-#' `step_collapse_stringdist` creates a *specification* of a recipe step that
+#' `step_collapse_stringdist()` creates a *specification* of a recipe step that
 #' will collapse factor levels that have a low stringdist between them.
 #'
 #' @inheritParams recipes::step_center
@@ -179,14 +179,13 @@ collapse_stringdist_impl <- function(x, dist, method, options) {
 
 #' @export
 bake.step_collapse_stringdist <- function(object, new_data, ...) {
-  col_names <- object$columns
-  # for backward compat
-  check_new_data(names(col_names), object, new_data)
+  col_names <- names(object$columns)
+  check_new_data(col_names, object, new_data)
 
-  for (i in seq_along(col_names)) {
-    new_data[, col_names[i]] <- collapse_apply(
-      new_data[[col_names[i]]],
-      object$results[[i]]
+  for (col_name in col_names) {
+    new_data[[col_name]] <- collapse_apply(
+      new_data[[col_name]],
+      object$results[[col_name]]
     )
   }
   as_tibble(new_data)
