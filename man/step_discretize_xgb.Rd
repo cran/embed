@@ -121,6 +121,28 @@ To use them, see the documentation in \link[recipes:case_weights]{recipes::case_
 \code{tidymodels.org}.
 }
 
+\examples{
+\dontshow{if (rlang::is_installed(c("xgboost", "modeldata"))) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+library(rsample)
+library(recipes)
+data(credit_data, package = "modeldata")
+
+set.seed(1234)
+split <- initial_split(credit_data[1:1000, ], strata = "Status")
+
+credit_data_tr <- training(split)
+credit_data_te <- testing(split)
+
+xgb_rec <-
+  recipe(Status ~ Income + Assets, data = credit_data_tr) \%>\%
+  step_impute_median(Income, Assets) \%>\%
+  step_discretize_xgb(Income, Assets, outcome = "Status")
+
+xgb_rec <- prep(xgb_rec, training = credit_data_tr)
+
+bake(xgb_rec, credit_data_te, Assets)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 \code{\link[=step_discretize_cart]{step_discretize_cart()}}, \code{\link[recipes:recipe]{recipes::recipe()}},
 \code{\link[recipes:prep]{recipes::prep()}}, \code{\link[recipes:bake]{recipes::bake()}}

@@ -122,6 +122,17 @@
 #' "Concatenate Embeddings for Categorical Variables with Keras"
 #' \url{https://flovv.github.io/Embeddings_with_keras_part2/}
 #'
+#' @examplesIf !embed:::is_cran_check() && rlang::is_installed("modeldata")
+#' data(grants, package = "modeldata")
+#'
+#' set.seed(1)
+#' grants_other <- sample_n(grants_other, 500)
+#'
+#' rec <- recipe(class ~ num_ci + sponsor_code, data = grants_other) %>%
+#'   step_embed(sponsor_code,
+#'     outcome = vars(class),
+#'     options = embed_control(epochs = 10)
+#'   )
 #' @export
 step_embed <-
   function(recipe,
@@ -520,10 +531,6 @@ class2ind <- function(x) {
   y
 }
 
-#' Test to see if tensorflow is available
-#'
-#' @return A logical
-#' @export
 is_tf_available <- function() {
   if (!rlang::is_installed("tensorflow")) {
     return(FALSE)

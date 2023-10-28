@@ -92,6 +92,25 @@ When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns \co
 The underlying operation does not allow for case weights.
 }
 
+\examples{
+\dontshow{if (!embed:::is_cran_check() && rlang::is_installed("modeldata")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+data(grants, package = "modeldata")
+rec <-
+  recipe(class ~ sponsor_code, data = grants_other) \%>\%
+  step_feature_hash(
+    sponsor_code,
+    num_hash = 2^6, keep_original_cols = TRUE
+  ) \%>\%
+  prep()
+
+# How many of the 298 locations ended up in each hash column?
+results <-
+  bake(rec, new_data = NULL, starts_with("sponsor_code")) \%>\%
+  distinct()
+
+apply(results \%>\% select(-sponsor_code), 2, sum) \%>\% table()
+\dontshow{\}) # examplesIf}
+}
 \references{
 Weinberger, K, A Dasgupta, J Langford, A Smola, and J Attenberg. 2009.
 "Feature Hashing for Large Scale Multitask Learning." In Proceedings of the
