@@ -2,6 +2,7 @@
 % Please edit documentation in R/feature_hash.R
 \name{step_feature_hash}
 \alias{step_feature_hash}
+\alias{tidy.step_feature_hash}
 \title{Dummy Variables Creation via Feature Hashing}
 \usage{
 step_feature_hash(
@@ -82,8 +83,13 @@ likely that some columns will have all zeros. A zero-variance filter (via
 \code{\link[recipes:step_zv]{recipes::step_zv()}}) is recommended for any recipe that uses hashed columns.
 }
 \section{Tidying}{
-When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns \code{terms}
-(the columns that is selected)  is returned.
+When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble is retruned with
+columns \code{terms} and \code{id}:
+
+\describe{
+\item{terms}{character, the selectors or variables selected}
+\item{id}{character, id of this step}
+}
 }
 
 \section{Case weights}{
@@ -93,7 +99,7 @@ The underlying operation does not allow for case weights.
 }
 
 \examples{
-\dontshow{if (!embed:::is_cran_check() && rlang::is_installed("modeldata")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (!embed:::is_cran_check() && rlang::is_installed(c("modeldata", "keras"))) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 data(grants, package = "modeldata")
 rec <-
   recipe(class ~ sponsor_code, data = grants_other) \%>\%

@@ -2,6 +2,7 @@
 % Please edit documentation in R/lencode_bayes.R
 \name{step_lencode_bayes}
 \alias{step_lencode_bayes}
+\alias{tidy.step_lencode_bayes}
 \title{Supervised Factor Conversions into Linear Functions using Bayesian Likelihood
 Encodings}
 \usage{
@@ -86,8 +87,15 @@ below). \code{prior_intercept} is the argument that has the most effect on the
 amount of shrinkage.
 }
 \section{Tidying}{
-When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns \code{terms}
-(the selectors or variables selected), \code{value} and \code{component} is returned.
+When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble is retruned with
+columns \code{level}, \code{value}, \code{terms}, and \code{id}:
+
+\describe{
+\item{level}{character, the factor levels}
+\item{value}{numeric, the encoding}
+\item{terms}{character, the selectors or variables selected}
+\item{id}{character, id of this step}
+}
 }
 
 \section{Case weights}{
@@ -123,13 +131,13 @@ Zumel N and Mount J (2017) "vtreat: a data.frame Processor for Predictive
 Modeling," arXiv:1611.09477
 
 "Hierarchical Partial Pooling for Repeated Binary Trials"
-\url{https://tinyurl.com/stan-pooling}
+\url{https://CRAN.R-project.org/package=rstanarm/vignettes/pooling.html}
 
-"Prior Distributions for `rstanarm`` Models"
-\url{https://tinyurl.com/stan-priors}
+"Prior Distributions for \code{rstanarm} Models"
+\url{http://mc-stan.org/rstanarm/reference/priors.html}
 
 "Estimating Generalized (Non-)Linear Models with Group-Specific Terms with
-\code{rstanarm}" \url{https://tinyurl.com/stan-glm-grouped}
+\code{rstanarm}" \url{http://mc-stan.org/rstanarm/articles/glmer.html}
 }
 \concept{preprocessing encoding}
 \keyword{datagen}

@@ -2,6 +2,7 @@
 % Please edit documentation in R/embed.R
 \name{step_embed}
 \alias{step_embed}
+\alias{tidy.step_embed}
 \alias{embed_control}
 \title{Encoding Factors into Multiple Columns}
 \usage{
@@ -80,10 +81,10 @@ processing the outcome variable(s)). Care should be taken when using \code{skip 
 
 \item{id}{A character string that is unique to this step to identify it.}
 
-\item{optimizer, loss, metrics}{Arguments to pass to \code{\link[keras:reexports]{keras::compile()}}}
+\item{optimizer, loss, metrics}{Arguments to pass to keras::compile()}
 
 \item{epochs, validation_split, batch_size, verbose, callbacks}{Arguments to pass
-to \code{\link[keras:reexports]{keras::fit()}}}
+to keras::fit()}
 }
 \value{
 An updated version of \code{recipe} with the new step added to the
@@ -152,9 +153,15 @@ tensorflow models cannot be run in parallel within the same session (via
 this step with \code{caret}, avoid parallel processing.
 }
 \section{Tidying}{
-When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns \code{terms}
-(the selectors or variables selected), \code{levels} (levels in variable), and a
-number of columns with embedding information are returned.
+When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble is retruned with
+a number of columns with embedding information, and columns \code{terms},
+\code{levels}, and \code{id}:
+
+\describe{
+\item{terms}{character, the selectors or variables selected}
+\item{levels}{character, levels in variable}
+\item{id}{character, id of this step}
+}
 }
 
 \section{Tuning Parameters}{
@@ -172,7 +179,7 @@ The underlying operation does not allow for case weights.
 }
 
 \examples{
-\dontshow{if (!embed:::is_cran_check() && rlang::is_installed("modeldata")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (!embed:::is_cran_check() && rlang::is_installed(c("modeldata", "keras"))) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 data(grants, package = "modeldata")
 
 set.seed(1)

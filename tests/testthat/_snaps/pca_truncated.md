@@ -5,8 +5,8 @@
     Condition
       Error in `step_pca_truncated()`:
       Caused by error in `bake()`:
-      ! Name collision occured. The following variable names already exists:
-      i  PC1
+      ! Name collision occurred. The following variable names already exist:
+      * `PC1`
 
 # empty printing
 
@@ -49,8 +49,8 @@
       rec <- prep(rec)
     Condition
       Warning:
-      'keep_original_cols' was added to `step_pca_truncated()` after this recipe was created.
-      Regenerate your recipe to avoid this warning.
+      `keep_original_cols` was added to `step_pca_truncated()` after this recipe was created.
+      i Regenerate your recipe to avoid this warning.
 
 # printing
 
@@ -85,5 +85,5 @@
       Training data contained 32 data points and no incomplete rows.
       
       -- Operations 
-      * Truncated PCA extraction with: cyl, disp, hp, drat, wt, qsec, ... | Trained
+      * Truncated PCA extraction with: cyl, disp, hp, drat, wt, ... | Trained
 

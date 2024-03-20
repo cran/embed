@@ -45,9 +45,15 @@
 #' Note that the original data will be replaced with the new bins.
 #'
 #' # Tidying
-#'
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble with columns `terms`
-#' (the columns that is selected), `values` is returned.
+#' 
+#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' columns `terms`, `value`, and `id`:
+#' 
+#' \describe{
+#'   \item{terms}{character, the selectors or variables selected}
+#'   \item{value}{numeric, location of the splits}
+#'   \item{id}{character, id of this step}
+#' }
 #'
 #' ```{r, echo = FALSE, results="asis"}
 #' step <- "step_discretize_cart"
@@ -275,8 +281,8 @@ print.step_discretize_cart <- function(x, width = max(20, options()$width - 30),
   invisible(x)
 }
 
-#' @rdname tidy.recipe
-#' @param x A `step_discretize_cart` object.
+#' @rdname step_discretize_cart
+#' @usage NULL
 #' @export
 tidy.step_discretize_cart <- function(x, ...) {
   if (is_trained(x)) {

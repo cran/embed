@@ -34,9 +34,14 @@
 #' [recipes::step_zv()]) is recommended for any recipe that uses hashed columns.
 #'
 #' # Tidying
-#'
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble with columns `terms`
-#' (the columns that is selected)  is returned.
+#' 
+#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' columns `terms` and `id`:
+#' 
+#' \describe{
+#'   \item{terms}{character, the selectors or variables selected}
+#'   \item{id}{character, id of this step}
+#' }
 #'
 #' @template case-weights-not-supported
 #'
@@ -50,7 +55,7 @@
 #' Approach for Predictive Models_. CRC/Chapman Hall
 #' \url{https://bookdown.org/max/FES/encoding-predictors-with-many-categories.html}
 #' @seealso [recipes::step_dummy()], [recipes::step_zv()]
-#' @examplesIf !embed:::is_cran_check() && rlang::is_installed("modeldata")
+#' @examplesIf !embed:::is_cran_check() && rlang::is_installed(c("modeldata", "keras"))
 #' data(grants, package = "modeldata")
 #' rec <-
 #'   recipe(class ~ sponsor_code, data = grants_other) %>%
@@ -159,6 +164,8 @@ make_hash_vars <- function(x, prefix, num_hash = 2^8) {
 
   uni_x <- unique(x)
 
+  rlang::check_installed("keras")
+
   column_int <-
     purrr::map_int(
       uni_x,
@@ -232,8 +239,8 @@ print.step_feature_hash <-
     invisible(x)
   }
 
-#' @rdname tidy.recipe
-#' @param x A `step_feature_hash` object.
+#' @rdname step_feature_hash
+#' @usage NULL
 #' @export
 tidy.step_feature_hash <- function(x, ...) {
   if (is_trained(x)) {

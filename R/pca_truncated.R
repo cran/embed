@@ -35,9 +35,26 @@
 #' 
 #' # Tidying
 #'
-#' When you [`tidy()`][tidy.recipe()] this step, use either `type = "coef"` for
-#' the variable loadings per component or `type = "variance"` for how much
-#' variance each component accounts for.
+#' When you [`tidy()`][tidy.recipe()] this step two things can happen depending
+#' the `type` argument. If `type = "coef"` a tibble returned with 4 columns
+#' `terms`, `value`, `component` , and `id`:
+#'
+#' \describe{
+#'   \item{terms}{character, the selectors or variables selected}
+#'   \item{value}{numeric, variable loading}
+#'   \item{component}{character, principle component}
+#'   \item{id}{character, id of this step}
+#' }
+#'
+#' If `type = "variance"` a tibble returned with 4 columns `terms`, `value`,
+#' `component` , and `id`:
+#'
+#' \describe{
+#'   \item{terms}{character, type of variance}
+#'   \item{value}{numeric, value of the variance}
+#'   \item{component}{integer, principle component}
+#'   \item{id}{character, id of this step}
+#' }
 #' 
 #' ```{r, echo = FALSE, results="asis"}
 #' step <- "step_pca_truncated"
@@ -260,10 +277,8 @@ pca_variances <- function(x) {
   res
 }
 
-#' @rdname tidy.recipe
-#' @param type For `step_pca_truncated`, either `"coef"` (for the variable
-#'   loadings per component) or `"variance"` (how much variance does each
-#'   component account for).
+#' @rdname step_pca_truncated
+#' @usage NULL
 #' @export
 tidy.step_pca_truncated <- function(x, type = "coef", ...) {
   if (!is_trained(x)) {

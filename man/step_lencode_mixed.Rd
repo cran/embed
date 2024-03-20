@@ -2,6 +2,7 @@
 % Please edit documentation in R/lencode_mixed.R
 \name{step_lencode_mixed}
 \alias{step_lencode_mixed}
+\alias{tidy.step_lencode_mixed}
 \title{Supervised Factor Conversions into Linear Functions using Bayesian Likelihood
 Encodings}
 \usage{
@@ -80,8 +81,15 @@ as well as any arguments given to the \code{options} argument to the step.
 Relevant options include \code{control} and others.
 }
 \section{Tidying}{
-When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble with columns \code{terms}
-(the selectors or variables selected), \code{value} and \code{component} is returned.
+When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble is retruned with
+columns \code{level}, \code{value}, \code{terms}, and \code{id}:
+
+\describe{
+\item{level}{character, the factor levels}
+\item{value}{numeric, the encoding}
+\item{terms}{character, the selectors or variables selected}
+\item{id}{character, id of this step}
+}
 }
 
 \section{Case weights}{

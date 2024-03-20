@@ -1,15 +1,12 @@
 source(testthat::test_path("make_example_data.R"))
 source(testthat::test_path("test-helpers.R"))
 
-# Uncomment to make stuff run on M1
-# tensorflow::tf$config$get_visible_devices("CPU") %>%
-#   tensorflow::tf$config$set_visible_devices()
-
 # Stops noisy tensorflow messages
 withr::local_envvar(TF_CPP_MIN_LOG_LEVEL = "2")
 
 test_that("factor encoded predictor", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
 
   class_test <- recipe(x2 ~ ., data = ex_dat) %>%
@@ -80,6 +77,7 @@ test_that("factor encoded predictor", {
 
 test_that("character encoded predictor", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
 
   class_test <- recipe(x2 ~ ., data = ex_dat_ch) %>%
@@ -148,6 +146,7 @@ test_that("character encoded predictor", {
 
 test_that("factor encoded predictor", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
 
   class_test <- recipe(x1 ~ ., data = ex_dat) %>%
@@ -217,6 +216,7 @@ test_that("factor encoded predictor", {
 
 test_that("character encoded predictor", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
 
   class_test <- recipe(x1 ~ ., data = ex_dat_ch) %>%
@@ -285,6 +285,7 @@ test_that("character encoded predictor", {
 
 test_that("bad args", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
 
   three_class <- iris
@@ -301,6 +302,7 @@ test_that("bad args", {
 
 test_that("check_name() is used", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
   
   dat <- ex_dat
@@ -334,6 +336,7 @@ test_that("tunable", {
 
 test_that("bake method errors when needed non-standard role columns are missing", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
   rec <- recipe(x2 ~ ., data = ex_dat) %>%
     step_embed(
@@ -355,6 +358,7 @@ test_that("bake method errors when needed non-standard role columns are missing"
 
 test_that("empty printing", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
   
   rec <- recipe(mpg ~ ., mtcars)
@@ -400,6 +404,7 @@ test_that("empty selection tidy method works", {
 
 test_that("keep_original_cols works", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
   
   new_names <- c("x2", "x3_embed_1", "x3_embed_2")
@@ -431,6 +436,7 @@ test_that("keep_original_cols works", {
 
 test_that("keep_original_cols - can prep recipes with it missing", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
   
   rec <- recipe(x2 ~ x3, data = ex_dat) %>%
@@ -450,6 +456,7 @@ test_that("keep_original_cols - can prep recipes with it missing", {
 
 test_that("printing", {
   skip_on_cran()
+  skip_if_not_installed("keras")
   skip_if(!embed:::is_tf_available())
   
   rec <- recipe(x2 ~ ., data = ex_dat_ch) %>%

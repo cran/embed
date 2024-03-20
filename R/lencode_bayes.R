@@ -61,9 +61,16 @@
 #'
 #' # Tidying
 #'
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble with columns `terms`
-#' (the selectors or variables selected), `value` and `component` is returned.
-#'
+#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' columns `level`, `value`, `terms`, and `id`:
+#' 
+#' \describe{
+#'   \item{level}{character, the factor levels}
+#'   \item{value}{numeric, the encoding}
+#'   \item{terms}{character, the selectors or variables selected}
+#'   \item{id}{character, id of this step}
+#' }
+#' 
 #' @template case-weights-supervised
 #'
 #' @references
@@ -76,13 +83,13 @@
 #' Modeling," arXiv:1611.09477
 #'
 #' "Hierarchical Partial Pooling for Repeated Binary Trials"
-#' \url{https://tinyurl.com/stan-pooling}
+#' \url{https://CRAN.R-project.org/package=rstanarm/vignettes/pooling.html}
 #'
-#' "Prior Distributions for `rstanarm`` Models"
-#' \url{https://tinyurl.com/stan-priors}
+#' "Prior Distributions for `rstanarm` Models"
+#' \url{http://mc-stan.org/rstanarm/reference/priors.html}
 #'
 #' "Estimating Generalized (Non-)Linear Models with Group-Specific Terms with
-#' `rstanarm`" \url{https://tinyurl.com/stan-glm-grouped}
+#' `rstanarm`" \url{http://mc-stan.org/rstanarm/articles/glmer.html}
 #'
 #' @examplesIf rlang::is_installed("modeldata")
 #' library(recipes)
@@ -267,9 +274,9 @@ print.step_lencode_bayes <-
     invisible(x)
   }
 
-#' @rdname tidy.recipe
-#' @param x A `step_lencode_bayes` object.
-#' @export
+  #' @rdname step_lencode_bayes
+  #' @usage NULL
+  #' @export
 tidy.step_lencode_bayes <- function(x, ...) {
   if (is_trained(x)) {
     if (length(x$mapping) == 0) {
