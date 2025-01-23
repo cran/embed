@@ -1,3 +1,11 @@
+# embed 1.1.5
+
+## Improvements
+
+* `step_umap()` has tunable `initial` and `target_weight` arguments. (#223, #222)
+
+* All messages, warnings and errors has been translated to use {cli} package (#153, #155).
+
 # embed 1.1.4
 
 ## Improvements

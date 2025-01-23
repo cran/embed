@@ -1,5 +1,3 @@
-source(testthat::test_path("test-helpers.R"))
-
 set.seed(1)
 df <- data.frame(
   x1 = sample(c("A", "B", "C"), size = 20, replace = TRUE) %>% factor(),
@@ -147,7 +145,7 @@ test_that("add_woe do not accept dictionary with unexpected layout", {
 })
 
 # test_that("add_woe warns user if the variable has too many levels", {
-#   expect_warning(credit_data %>% add_woe("Status", Expenses))
+#   expect_snapshot(credit_data %>% add_woe("Status", Expenses))
 # })
 
 # step_woe ----------------------------------------------------------------
@@ -266,6 +264,20 @@ test_that("tunable", {
   )
 })
 
+test_that("bad args", {
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_woe(outcome = vars(mpg), Laplace = NULL) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_woe(outcome = vars(mpg), prefix = NULL)
+  )
+})
+
 # Infrastructure ---------------------------------------------------------------
 
 test_that("bake method errors when needed non-standard role columns are missing", {
@@ -281,9 +293,9 @@ test_that("bake method errors when needed non-standard role columns are missing"
     rec_trained <- prep(rec, training = credit_data, verbose = FALSE)
   )
   
-  expect_error(
-    bake(rec_trained, new_data = credit_data[, -8]),
-    class = "new_data_missing_column"
+  expect_snapshot(
+    error = TRUE,
+    bake(rec_trained, new_data = credit_data[, -8])
   )
 })
 
@@ -376,9 +388,8 @@ test_that("keep_original_cols - can prep recipes with it missing", {
     rec <- prep(rec)
   )
   
-  expect_error(
-    bake(rec, new_data = ames),
-    NA
+  expect_no_error(
+    bake(rec, new_data = ames)
   )
 })
 

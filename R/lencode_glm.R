@@ -44,7 +44,7 @@
 #'
 #' # Tidying
 #'
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' columns `level`, `value`, `terms`, and `id`:
 #' 
 #' \describe{
@@ -89,7 +89,7 @@ step_lencode_glm <-
            skip = FALSE,
            id = rand_id("lencode_glm")) {
     if (is.null(outcome)) {
-      rlang::abort("Please list a variable in `outcome`")
+      cli::cli_abort("Please list a variable in {.arg outcome}.")
     }
     add_step(
       recipe,

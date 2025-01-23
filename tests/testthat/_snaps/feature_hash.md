@@ -3,7 +3,7 @@
     Code
       res_te <- bake(rec_tr, te_dat, dplyr::starts_with("x3"))
     Condition
-      Warning:
+      Warning in `bake()`:
       ! There was 1 column that was a factor when the recipe was prepped:
       * `x3`
       i This may cause errors when processing new data.
@@ -17,6 +17,26 @@
       Caused by error in `bake()`:
       ! Name collision occurred. The following variable names already exist:
       * `x3_hash_01`
+
+# bad args
+
+    Code
+      recipe(~., data = mtcars) %>% step_feature_hash(num_hash = -4) %>% prep()
+    Condition
+      Warning:
+      `step_feature_hash()` was deprecated in embed 0.2.0.
+      i Please use `textrecipes::step_dummy_hash()` instead.
+      Error in `step_feature_hash()`:
+      Caused by error in `prep()`:
+      ! `num_hash` must be a whole number larger than or equal to 0, not the number -4.
+
+# bake method errors when needed non-standard role columns are missing
+
+    Code
+      bake(rec_trained, new_data = ex_dat[, -3])
+    Condition
+      Error in `step_feature_hash()`:
+      ! The following required column is missing from `new_data`: x3.
 
 # empty printing
 

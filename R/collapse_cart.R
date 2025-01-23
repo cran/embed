@@ -6,7 +6,7 @@
 #' @param recipe A recipe object. The step will be added to the sequence of
 #'   operations for this recipe.
 #' @param ... One or more selector functions to choose which variables are
-#'   affected by the step. See [selections()] for more details. For the `tidy`
+#'   affected by the step. See [recipes::selections] for more details. For the `tidy`
 #'   method, these are not currently used.
 #' @param outcome A call to `vars` to specify which variable is used as the
 #'   outcome to train CART models in order to pool factor levels.
@@ -21,7 +21,7 @@
 #'   complex trees.
 #' @param results A list of results to convert to new factor levels.
 #' @param skip A logical. Should the step be skipped when the recipe is baked by
-#'   [bake()]? While all operations are baked when [prep()] is run, some
+#'   [recipes::bake]? While all operations are baked when [recipes::prep] is run, some
 #'   operations may not be able to be conducted on new data (e.g. processing the
 #'   outcome variable(s)). Care should be taken when using `skip = TRUE` as it
 #'   may affect the computations for subsequent operations
@@ -42,7 +42,7 @@
 #'
 #' # Tidying
 #' 
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' columns `terms`, `old`, `new`, and `id`:
 #' 
 #' \describe{
@@ -79,6 +79,9 @@ step_collapse_cart <-
            skip = FALSE,
            id = rand_id("step_collapse_cart")) {
     recipes_pkg_check(required_pkgs.step_discretize_cart())
+
+    check_number_decimal(cost_complexity, min = 0)
+    check_number_whole(min_n, min = 1)
 
     add_step(
       recipe,

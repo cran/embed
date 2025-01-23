@@ -1,6 +1,3 @@
-source(testthat::test_path("make_example_data.R"))
-source(testthat::test_path("test-helpers.R"))
-
 test_that("factor encoded predictor", {
   skip_if_not_installed("Matrix", "1.6-2")
   skip_if_not_installed("lme4", "1.1-35.1")
@@ -301,9 +298,9 @@ test_that("bake method errors when needed non-standard role columns are missing"
   
   rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
   
-  expect_error(
-    bake(rec_trained, new_data = ex_dat[, -3]),
-    class = "new_data_missing_column"
+  expect_snapshot(
+    error = TRUE,
+    bake(rec_trained, new_data = ex_dat[, -3])
   )
 })
 

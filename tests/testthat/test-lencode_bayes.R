@@ -1,6 +1,3 @@
-source(testthat::test_path("make_example_data.R"))
-source(testthat::test_path("test-helpers.R"))
-
 opts <- list(seed = 34677, chains = 2, iter = 500)
 
 omit_warning <- function(pattern) {
@@ -412,6 +409,14 @@ test_that("case weights", {
   expect_snapshot(class_test)
 })
 
+test_that("bad args", {
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_lencode_bayes(outcome = vars(mpg), verbose = "yes")
+  )
+})
+
 # Infrastructure ---------------------------------------------------------------
 
 test_that("bake method errors when needed non-standard role columns are missing", {
@@ -425,9 +430,9 @@ test_that("bake method errors when needed non-standard role columns are missing"
   
   rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
   
-  expect_error(
-    bake(rec_trained, new_data = ex_dat[, -3]),
-    class = "new_data_missing_column"
+  expect_snapshot(
+    error = TRUE,
+    bake(rec_trained, new_data = ex_dat[, -3])
   )
 })
 

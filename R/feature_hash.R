@@ -35,7 +35,7 @@
 #'
 #' # Tidying
 #' 
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' columns `terms` and `id`:
 #' 
 #' \describe{
@@ -138,6 +138,8 @@ step_feature_hash_new <-
 prep.step_feature_hash <- function(x, training, info = NULL, ...) {
   col_names <- recipes_eval_select(x$terms, training, info)
 
+  check_number_whole(x$num_hash, min = 0, arg = "num_hash")
+  
   if (length(col_names) > 0) {
     check_type(training[, col_names], types = c("string", "factor", "ordered"))
   }
@@ -222,7 +224,7 @@ bake.step_feature_hash <- function(object, new_data, ...) {
       object$num_hash
   )
   
-  new_cols <- check_name(new_cols, new_data, object, names(new_cols))
+  new_cols <- recipes::check_name(new_cols, new_data, object, names(new_cols))
   
   new_data <- vec_cbind(new_data, new_cols)
 

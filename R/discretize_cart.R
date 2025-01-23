@@ -7,7 +7,7 @@
 #' @param recipe A recipe object. The step will be added to the sequence of
 #'   operations for this recipe.
 #' @param ... One or more selector functions to choose which variables are
-#'   affected by the step. See [selections()] for more details.
+#'   affected by the step. See [recipes::selections] for more details.
 #' @param role Defaults to `"predictor"`.
 #' @param trained A logical to indicate if the quantities for preprocessing have
 #'   been estimated.
@@ -46,7 +46,7 @@
 #'
 #' # Tidying
 #' 
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' columns `terms`, `value`, and `id`:
 #' 
 #' \describe{
@@ -104,7 +104,9 @@ step_discretize_cart <-
     recipes_pkg_check(required_pkgs.step_discretize_cart())
 
     if (is.null(outcome)) {
-      rlang::abort("`outcome` should select at least one column.")
+      cli::cli_abort(
+        "The {.arg outcome} argument should select at least one column."
+      )
     }
 
     add_step(
@@ -167,24 +169,20 @@ cart_binning <- function(predictor, term, outcome, cost_complexity, tree_depth,
 
   if (inherits(cart_mdl, "try-error")) {
     err <- conditionMessage(attr(cart_mdl, "condition"))
-    msg <-
-      glue(
-        "`step_discretize_cart()` failed to create a tree with error for ",
-        "predictor '{term}', which will not be binned. The error: {err}"
-      )
-    rlang::warn(msg)
+    cli::cli_warn(
+      "step_discretize_cart() failed to create a tree for predictor {.var {term}}, 
+      which will not be binned. The error: {err}"
+    )
     return(numeric(0))
   }
 
   if (any(names(cart_mdl) == "splits")) {
     cart_split <- sort(unique(cart_mdl$splits[, "index"]))
   } else {
-    msg <-
-      glue(
-        "`step_discretize_cart()` failed to find any meaningful splits for ",
-        "predictor '{term}', which will not be binned."
-      )
-    rlang::warn(msg)
+    cli::cli_warn(
+      "{.fn step_discretize_cart} failed to find any meaningful splits for 
+      predictor {.val {term}}, which will not be binned."
+    )
     cart_split <- numeric(0)
   }
   cart_split
@@ -193,6 +191,10 @@ cart_binning <- function(predictor, term, outcome, cost_complexity, tree_depth,
 #' @export
 prep.step_discretize_cart <- function(x, training, info = NULL, ...) {
   col_names <- recipes_eval_select(x$terms, training, info)
+
+  check_number_decimal(x$cost_complexity, min = 0, arg = "cost_complexity")
+  check_number_decimal(x$tree_depth, min = 0, arg = "tree_depth")
+  check_number_decimal(x$min_n, min = 0, arg = "min_n")
 
   wts <- get_case_weights(info, training)
   were_weights_used <- are_weights_used(wts)
@@ -263,7 +265,7 @@ bake.step_discretize_cart <- function(object, new_data, ...) {
         dig.lab = 4
       )
 
-      check_name(binned_data, new_data, object)
+      recipes::check_name(binned_data, new_data, object)
       new_data <- binned_data
     }
   }

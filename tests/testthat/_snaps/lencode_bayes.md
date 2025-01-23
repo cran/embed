@@ -10,7 +10,7 @@
     Code
       new_values_ch <- bake(class_test, new_data = new_dat_ch)
     Condition
-      Warning:
+      Warning in `bake()`:
       ! There was 1 column that was a factor when the recipe was prepped:
       * `x3`
       i This may cause errors when processing new data.
@@ -28,7 +28,7 @@
     Code
       new_values_ch <- bake(reg_test, new_data = new_dat_ch)
     Condition
-      Warning:
+      Warning in `bake()`:
       ! There was 1 column that was a factor when the recipe was prepped:
       * `x3`
       i This may cause errors when processing new data.
@@ -63,7 +63,7 @@
     Code
       new_values_ch <- bake(class_test, new_data = new_dat_ch)
     Condition
-      Warning:
+      Warning in `bake()`:
       ! There was 1 column that was a factor when the recipe was prepped:
       * `x3`
       i This may cause errors when processing new data.
@@ -100,6 +100,22 @@
       
       -- Operations 
       * Linear embedding for factors via Bayesian GLM for: x3 | Trained, weighted
+
+# bad args
+
+    Code
+      recipe(~., data = mtcars) %>% step_lencode_bayes(outcome = vars(mpg), verbose = "yes")
+    Condition
+      Error in `step_lencode_bayes()`:
+      ! `verbose` must be `TRUE` or `FALSE`, not the string "yes".
+
+# bake method errors when needed non-standard role columns are missing
+
+    Code
+      bake(rec_trained, new_data = ex_dat[, -3])
+    Condition
+      Error in `step_lencode_bayes()`:
+      ! The following required column is missing from `new_data`: x3.
 
 # empty printing
 

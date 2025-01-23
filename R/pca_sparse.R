@@ -8,7 +8,7 @@
 #' @inheritParams recipes::step_pca
 #' @inherit step_lencode_bayes return
 #' @param ... One or more selector functions to choose which variables will be
-#'   used to compute the components. See [selections()] for more details. For
+#'   used to compute the components. See [recipes::selections] for more details. For
 #'   the `tidy` method, these are not currently used.
 #' @param role For model terms created by this step, what analysis role should
 #'   they be assigned? By default, the function assumes that the new principal
@@ -20,7 +20,7 @@
 #'   output. Defaults to `FALSE`.
 #' @param options A list of options to the default method for [irlba::ssvd()].
 #' @param res The rotation matrix once this preprocessing step has be trained by
-#'   [prep()].
+#'   [recipes::prep].
 #' @param prefix A character string that will be the prefix to the resulting new
 #'   variables. See notes below.
 #' @return An updated version of `recipe` with the new step added to the
@@ -46,7 +46,7 @@
 #'
 #' # Tidying
 #'
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' columns `terms`, `value`, `component`, and `id`:
 #'
 #' \describe{
@@ -103,6 +103,8 @@ step_pca_sparse <- function(recipe,
                             keep_original_cols = FALSE,
                             skip = FALSE,
                             id = rand_id("pca_sparse")) {
+  check_string(prefix)
+  
   add_step(
     recipe,
     step_pca_sparse_new(
@@ -143,6 +145,11 @@ step_pca_sparse_new <-
 #' @export
 prep.step_pca_sparse <- function(x, training, info = NULL, ...) {
   col_names <- recipes_eval_select(x$terms, training, info)
+
+  check_number_whole(x$num_comp, min = 0, arg = "num_comp")
+  check_number_decimal(
+    x$predictor_prop, min = 0, max = 1, arg = "predictor_prop"
+  )
 
   if (length(col_names) > 0 && x$num_comp > 0) {
     check_type(training[, col_names], types = c("double", "integer"))
@@ -211,7 +218,7 @@ bake.step_pca_sparse <- function(object, new_data, ...) {
   x <- as.matrix(new_data[, pca_vars])
   comps <- x %*% object$res
   comps <- as_tibble(comps)
-  comps <- check_name(comps, new_data, object)
+  comps <- recipes::check_name(comps, new_data, object)
   new_data <- vec_cbind(new_data, comps)
   
   new_data <- remove_original_cols(new_data, object, pca_vars)

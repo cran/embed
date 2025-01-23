@@ -11,7 +11,7 @@
 #'   `center = FALSE`, `scale. = FALSE`, and `tol = NULL`. **Note** that the
 #'   argument `x` should not be passed here (or at all).
 #' @param res The [irlba::prcomp_irlba()] object is stored here once this
-#'   preprocessing step has be trained by [prep()].
+#'   preprocessing step has be trained by [recipes::prep].
 #' @template step-return
 #' @details
 #'
@@ -24,8 +24,8 @@
 #'
 #' It is advisable to standardize the variables prior to running PCA. Here, each
 #' variable will be centered and scaled prior to the PCA calculation. This can
-#' be changed using the `options` argument or by using [step_center()] and
-#' [step_scale()].
+#' be changed using the `options` argument or by using [recipes::step_center()] and
+#' [recipes::step_scale()].
 #'
 #' ```{r, echo = FALSE, results="asis"}
 #' prefix <- "PC"
@@ -35,7 +35,7 @@
 #' 
 #' # Tidying
 #'
-#' When you [`tidy()`][tidy.recipe()] this step two things can happen depending
+#' When you [`tidy()`][recipes::tidy.recipe] this step two things can happen depending
 #' the `type` argument. If `type = "coef"` a tibble returned with 4 columns
 #' `terms`, `value`, `component` , and `id`:
 #'
@@ -96,6 +96,8 @@ step_pca_truncated <- function(recipe,
                                keep_original_cols = FALSE,
                                skip = FALSE,
                                id = rand_id("pca_truncated")) {
+  check_string(prefix)
+
   add_step(
     recipe,
     step_pca_truncated_new(
@@ -139,6 +141,8 @@ step_pca_truncated_new <-
 prep.step_pca_truncated <- function(x, training, info = NULL, ...) {
   col_names <- recipes_eval_select(x$terms, training, info)
   check_type(training[, col_names], types = c("double", "integer"))
+
+  check_number_whole(x$num_comp, min = 0, arg = "num_comp")
 
   wts <- get_case_weights(info, training)
   were_weights_used <- are_weights_used(wts, unsupervised = TRUE)
@@ -208,7 +212,7 @@ bake.step_pca_truncated <- function(object, new_data, ...) {
     object$res$rotation
   comps <- comps[, 1:object$num_comp, drop = FALSE]
   comps <- as_tibble(comps)
-  comps <- check_name(comps, new_data, object)
+  comps <- recipes::check_name(comps, new_data, object)
   new_data <- vec_cbind(new_data, comps)
 
   new_data <- remove_original_cols(new_data, object, pca_vars)

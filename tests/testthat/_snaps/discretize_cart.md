@@ -5,7 +5,7 @@
       cost_complexity = 0.01, tree_depth = 5, min_n = 10)
     Condition
       Warning:
-      `step_discretize_cart()` failed to find any meaningful splits for predictor 'x', which will not be binned.
+      `step_discretize_cart()` failed to find any meaningful splits for predictor "x", which will not be binned.
 
 # low-level binning for regression
 
@@ -14,7 +14,7 @@
       cost_complexity = 0.01, tree_depth = 5, min_n = 10)
     Condition
       Warning:
-      `step_discretize_cart()` failed to find any meaningful splits for predictor 'potato', which will not be binned.
+      `step_discretize_cart()` failed to find any meaningful splits for predictor "potato", which will not be binned.
 
 # step function for classification
 
@@ -23,7 +23,7 @@
         all_predictors(), outcome = "class") %>% prep()
     Condition
       Warning:
-      `step_discretize_cart()` failed to find any meaningful splits for predictor 'z', which will not be binned.
+      `step_discretize_cart()` failed to find any meaningful splits for predictor "z", which will not be binned.
 
 # step function for regression
 
@@ -32,7 +32,7 @@
         all_predictors(), outcome = "y") %>% prep()
     Condition
       Warning:
-      `step_discretize_cart()` failed to find any meaningful splits for predictor 'z', which will not be binned.
+      `step_discretize_cart()` failed to find any meaningful splits for predictor "z", which will not be binned.
 
 # bad args
 
@@ -45,13 +45,43 @@
       x All columns selected for the step should be double or integer.
       * 1 factor variable found: `w`
 
+---
+
+    Code
+      recipe(~., data = mtcars) %>% step_discretize_cart(outcome = vars("mpg"),
+      cost_complexity = -4) %>% prep()
+    Condition
+      Error in `step_discretize_cart()`:
+      Caused by error in `prep()`:
+      ! `cost_complexity` must be a number larger than or equal to 0, not the number -4.
+
+---
+
+    Code
+      recipe(~., data = mtcars) %>% step_discretize_cart(outcome = vars("mpg"),
+      min_n = -4) %>% prep()
+    Condition
+      Error in `step_discretize_cart()`:
+      Caused by error in `prep()`:
+      ! `min_n` must be a number larger than or equal to 0, not the number -4.
+
+---
+
+    Code
+      recipe(~., data = mtcars) %>% step_discretize_cart(outcome = vars("mpg"),
+      tree_depth = -4) %>% prep()
+    Condition
+      Error in `step_discretize_cart()`:
+      Caused by error in `prep()`:
+      ! `tree_depth` must be a number larger than or equal to 0, not the number -4.
+
 # tidy method
 
     Code
       cart_rec <- prep(cart_rec)
     Condition
       Warning:
-      `step_discretize_cart()` failed to find any meaningful splits for predictor 'z', which will not be binned.
+      `step_discretize_cart()` failed to find any meaningful splits for predictor "z", which will not be binned.
 
 # case weights step functions
 
@@ -60,7 +90,7 @@
         all_predictors(), outcome = "class") %>% prep()
     Condition
       Warning:
-      `step_discretize_cart()` failed to find any meaningful splits for predictor 'z', which will not be binned.
+      `step_discretize_cart()` failed to find any meaningful splits for predictor "z", which will not be binned.
 
 ---
 
@@ -87,6 +117,22 @@
       
       -- Operations 
       * Discretizing variables using CART: x and z | Trained, weighted
+
+# bake method errors when needed non-standard role columns are missing
+
+    Code
+      rec_trained <- prep(rec, training = sim_tr_cls, verbose = FALSE)
+    Condition
+      Warning:
+      `step_discretize_cart()` failed to find any meaningful splits for predictor "z", which will not be binned.
+
+---
+
+    Code
+      bake(rec_trained, new_data = sim_tr_cls[, -1])
+    Condition
+      Error in `step_discretize_cart()`:
+      ! The following required column is missing from `new_data`: x.
 
 # empty printing
 
@@ -145,7 +191,7 @@
       prep(rec)
     Condition
       Warning:
-      `step_discretize_cart()` failed to find any meaningful splits for predictor 'z', which will not be binned.
+      `step_discretize_cart()` failed to find any meaningful splits for predictor "z", which will not be binned.
     Message
       
       -- Recipe ----------------------------------------------------------------------

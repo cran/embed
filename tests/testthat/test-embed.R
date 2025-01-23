@@ -1,6 +1,3 @@
-source(testthat::test_path("make_example_data.R"))
-source(testthat::test_path("test-helpers.R"))
-
 # Stops noisy tensorflow messages
 withr::local_envvar(TF_CPP_MIN_LOG_LEVEL = "2")
 
@@ -283,23 +280,6 @@ test_that("character encoded predictor", {
   )
 })
 
-test_that("bad args", {
-  skip_on_cran()
-  skip_if_not_installed("keras")
-  skip_if(!embed:::is_tf_available())
-
-  three_class <- iris
-  three_class$fac <- rep(letters[1:3], 50)
-  three_class$logical <- rep(c(TRUE, FALSE), 75)
-
-  expect_snapshot(
-    error = TRUE,
-    recipe(Species ~ ., data = three_class) %>%
-      step_embed(Sepal.Length, outcome = vars(Species)) %>%
-      prep(training = three_class, retain = TRUE)
-  )
-})
-
 test_that("check_name() is used", {
   skip_on_cran()
   skip_if_not_installed("keras")
@@ -332,6 +312,21 @@ test_that("tunable", {
   )
 })
 
+test_that("bad args", {
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_embed(outcome = vars(mpg), num_terms = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_embed(outcome = vars(mpg), hidden_units = -4) %>%
+      prep()
+  )
+})
+
 # Infrastructure ---------------------------------------------------------------
 
 test_that("bake method errors when needed non-standard role columns are missing", {
@@ -350,9 +345,9 @@ test_that("bake method errors when needed non-standard role columns are missing"
   
   rec_trained <- prep(rec, training = ex_dat, verbose = FALSE)
   
-  expect_error(
-    bake(rec_trained, new_data = ex_dat[, -3]),
-    class = "new_data_missing_column"
+  expect_snapshot(
+    error = TRUE,
+    bake(rec_trained, new_data = ex_dat[, -3])
   )
 })
 
@@ -448,9 +443,8 @@ test_that("keep_original_cols - can prep recipes with it missing", {
     rec <- prep(rec)
   )
   
-  expect_error(
-    bake(rec, new_data = ex_dat),
-    NA
+  expect_no_error(
+    bake(rec, new_data = ex_dat)
   )
 })
 

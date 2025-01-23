@@ -61,7 +61,7 @@
 #'
 #' # Tidying
 #'
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' columns `level`, `value`, `terms`, and `id`:
 #' 
 #' \describe{
@@ -117,8 +117,11 @@ step_lencode_bayes <-
            skip = FALSE,
            id = rand_id("lencode_bayes")) {
     if (is.null(outcome)) {
-      rlang::abort("Please list a variable in `outcome`")
+      cli::cli_abort("Please list a variable in {.code outcome}.")
     }
+
+    check_bool(verbose)
+    
     add_step(
       recipe,
       step_lencode_bayes_new(

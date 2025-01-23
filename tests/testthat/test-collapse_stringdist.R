@@ -4,14 +4,13 @@ test_that("collapsing factors", {
   
   data(ames, package = "modeldata")
 
-  expect_error(
+  expect_no_error(
     {
       rec_1 <-
         recipe(Sale_Price ~ ., data = ames) %>%
         step_collapse_stringdist(MS_SubClass, distance = 5) %>%
         prep()
-    },
-    regex = NA
+    }
   )
 
   expect_true(length(rec_1$steps[[1]]$results) == 1)
@@ -33,14 +32,13 @@ test_that("collapsing factors", {
     )
   )
 
-  expect_error(
+  expect_no_error(
     {
       rec_2 <-
         recipe(Sale_Price ~ ., data = ames) %>%
         step_collapse_stringdist(MS_SubClass, Overall_Cond, distance = 10) %>%
         prep()
-    },
-    regex = NA
+    }
   )
 
   expect_true(length(rec_2$steps[[1]]$results) == 2)
@@ -165,14 +163,13 @@ test_that("failed collapsing", {
   data(ames, package = "modeldata")
 
   # too many splits
-  expect_error(
+  expect_no_error(
     {
       rec_4 <-
         recipe(Sale_Price ~ ., data = ames) %>%
         step_collapse_stringdist(MS_SubClass, distance = 0) %>%
         prep()
-    },
-    regex = NA
+    }
   )
 
   expect_equal(
@@ -181,19 +178,33 @@ test_that("failed collapsing", {
   )
 
   # too few splits
-  expect_error(
+  expect_no_error(
     {
       rec_5 <-
         recipe(Sale_Price ~ ., data = ames) %>%
         step_collapse_stringdist(MS_SubClass, distance = 10000) %>%
         prep()
-    },
-    regex = NA
+    }
   )
 
   expect_equal(
     length(rec_5$steps[[1]]$results$MS_SubClass),
     1
+  )
+})
+
+test_that("bad args", {
+  skip_if_not_installed("stringdist")
+
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_collapse_stringdist(cost_complexity = -4)
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_collapse_stringdist(min_n = -4)
   )
 })
 
@@ -212,9 +223,9 @@ test_that("bake method errors when needed non-standard role columns are missing"
   
   rec_trained <- prep(rec, training = ames, verbose = FALSE)
   
-  expect_error(
-    bake(rec_trained, new_data = ames[, -1]),
-    class = "new_data_missing_column"
+  expect_snapshot(
+    error = TRUE,
+    bake(rec_trained, new_data = ames[, -1])
   )
 })
 

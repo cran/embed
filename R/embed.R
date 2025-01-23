@@ -103,7 +103,7 @@
 #'
 #' # Tidying
 #' 
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' a number of columns with embedding information, and columns `terms`, 
 #' `levels`, and `id`:
 #' 
@@ -159,7 +159,7 @@ step_embed <-
     is_tf_available()
 
     if (is.null(outcome)) {
-      rlang::abort("Please list a variable in `outcome`")
+      cli::cli_abort("Please list a variable in {.arg outcome}.")
     }
     add_step(
       recipe,
@@ -205,6 +205,9 @@ step_embed_new <-
 #' @export
 prep.step_embed <- function(x, training, info = NULL, ...) {
   col_names <- recipes_eval_select(x$terms, training, info)
+
+  check_number_whole(x$num_terms, min = 0, arg = "num_terms")
+  check_number_whole(x$hidden_units, min = 0, arg = "hidden_units")
 
   if (length(col_names) > 0) {
     check_type(training[, col_names], types = c("string", "factor", "ordered"))
@@ -261,10 +264,10 @@ prep.step_embed <- function(x, training, info = NULL, ...) {
 
 is_tf_2 <- function() {
   if (!is_tf_available()) {
-    rlang::abort(
+    cli::cli_abort(
       c(
         "tensorflow could now be found.",
-        "Please run `tensorflow::install_tensorflow()` to install."
+        "i" = "Please run {.code tensorflow::install_tensorflow()} to install."
       )
     )
   }
@@ -429,7 +432,7 @@ bake.step_embed <- function(object, new_data, ...) {
       prefix = col_name
     )
    
-    tmp <- check_name(tmp, new_data, object, names(tmp))
+    tmp <- recipes::check_name(tmp, new_data, object, names(tmp))
     
     new_data <- vec_cbind(new_data, tmp)
   }
@@ -491,13 +494,13 @@ embed_control <- function(loss = "mse",
                           verbose = 0,
                           callbacks = NULL) {
   if (batch_size < 1) {
-    rlang::abort("`batch_size` should be a positive integer")
+    cli::cli_abort("{.arg batch_size} should be a positive integer.")
   }
   if (epochs < 1) {
-    rlang::abort("`epochs` should be a positive integer")
+    cli::cli_abort("{.arg epochs} should be a positive integer.")
   }
   if (validation_split < 0 || validation_split > 1) {
-    rlang::abort("`validation_split` should be on [0, 1)")
+    cli::cli_abort("{.arg validation_split} should be on [0, 1).")
   }
   list(
     loss = loss, metrics = metrics, optimizer = optimizer, epochs = epochs,
@@ -518,11 +521,9 @@ tf_options_check <- function(opt) {
   )
 
   if (length(setdiff(exp_names, names(opt))) > 0) {
-    rlang::abort(
-      paste0(
-        "The following options are missing from the `options`: ",
-        paste0(setdiff(exp_names, names(opt)), collapse = ",")
-      )
+    cli::cli_abort(
+      "The options {.code {setdiff(exp_names, names(opt))}} are missing from 
+      {.arg options}."
     )
   }
   opt
@@ -530,7 +531,7 @@ tf_options_check <- function(opt) {
 
 class2ind <- function(x) {
   if (!is.factor(x)) {
-    rlang::abort("'x' should be a factor")
+    cli::cli_abort("{.arg x} should be a factor.")
   }
   y <- model.matrix(~ x - 1)
   colnames(y) <- gsub("^x", "", colnames(y))

@@ -1,5 +1,3 @@
-source(testthat::test_path("test-helpers.R"))
-
 iris_dat <- iris
 
 iris_dat[, 1:4] <- scale(iris_dat[, 1:4])
@@ -216,11 +214,11 @@ test_that("tunable", {
   rec_param <- tunable.step_umap(rec$steps[[1]])
   expect_equal(
     rec_param$name,
-    c("num_comp", "neighbors", "min_dist", "learn_rate", "epochs")
+    c("num_comp", "neighbors", "min_dist", "learn_rate", "epochs", "initial", "target_weight")
   )
   expect_true(all(rec_param$source == "recipe"))
   expect_true(is.list(rec_param$call_info))
-  expect_equal(nrow(rec_param), 5)
+  expect_equal(nrow(rec_param), 7L)
   expect_equal(
     names(rec_param),
     c("name", "call_info", "source", "component", "component_id")
@@ -244,6 +242,55 @@ test_that("backwards compatible for initial and target_weight args (#213)", {
   )
 })
 
+test_that("bad args", {
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_umap(num_comp = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_umap(neighbors = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_umap(min_dist = TRUE) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_umap(learn_rate = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_umap(epochs = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_umap(initial = "wrong") %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_umap(target_weight = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_umap(prefix = NULL)
+  )
+})
 
 # Infrastructure ---------------------------------------------------------------
 
@@ -257,9 +304,9 @@ test_that("bake method errors when needed non-standard role columns are missing"
   
   rec_trained <- prep(rec, training = tr, verbose = FALSE)
   
-  expect_error(
-    bake(rec_trained, new_data = tr[, -4]),
-    class = "new_data_missing_column"
+  expect_snapshot(
+    error = TRUE,
+    bake(rec_trained, new_data = tr[, -4])
   )
 })
 
@@ -344,9 +391,8 @@ test_that("keep_original_cols - can prep recipes with it missing", {
     rec <- prep(rec)
   )
   
-  expect_error(
-    bake(rec, new_data = mtcars),
-    NA
+  expect_no_error(
+    bake(rec, new_data = mtcars)
   )
 })
 
@@ -369,11 +415,13 @@ test_that("tunable is setup to works with extract_parameter_set_dials", {
       neighbors = hardhat::tune(),
       min_dist = hardhat::tune(),
       learn_rate = hardhat::tune(),
-      epochs = hardhat::tune()
+      epochs = hardhat::tune(),
+      initial = hardhat::tune(),
+      target_weight = hardhat::tune()
     )
   
   params <- extract_parameter_set_dials(rec)
   
   expect_s3_class(params, "parameters")
-  expect_identical(nrow(params), 5L)
+  expect_identical(nrow(params), 7L)
 })

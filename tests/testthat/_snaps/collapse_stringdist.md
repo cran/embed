@@ -1,3 +1,27 @@
+# bad args
+
+    Code
+      recipe(~., data = mtcars) %>% step_collapse_stringdist(cost_complexity = -4)
+    Condition
+      Error in `step_collapse_stringdist()`:
+      ! `distance` must be a number, not `NULL`.
+
+---
+
+    Code
+      recipe(~., data = mtcars) %>% step_collapse_stringdist(min_n = -4)
+    Condition
+      Error in `step_collapse_stringdist()`:
+      ! `distance` must be a number, not `NULL`.
+
+# bake method errors when needed non-standard role columns are missing
+
+    Code
+      bake(rec_trained, new_data = ames[, -1])
+    Condition
+      Error in `step_collapse_stringdist()`:
+      ! The following required column is missing from `new_data`: MS_SubClass.
+
 # empty printing
 
     Code

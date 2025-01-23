@@ -7,7 +7,7 @@
 #' @param recipe A recipe object. The step will be added to the sequence of
 #'   operations for this recipe.
 #' @param ... One or more selector functions to choose which variables are
-#'   affected by the step. See [selections()] for more details.
+#'   affected by the step. See [recipes::selections] for more details.
 #' @param role Defaults to `"predictor"`.
 #' @param trained A logical to indicate if the quantities for preprocessing have
 #'   been estimated.
@@ -63,7 +63,7 @@
 #'
 #' # Tidying
 #' 
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' columns `terms`, `value`, and `id`:
 #' 
 #' \describe{
@@ -117,7 +117,7 @@ step_discretize_xgb <-
            skip = FALSE,
            id = rand_id("discretize_xgb")) {
     if (is.null(outcome)) {
-      rlang::abort("`outcome` should select at least one column.")
+      cli::cli_abort("{.arg outcome} should select at least one column.")
     }
 
     recipes_pkg_check(required_pkgs.step_discretize_xgb())
@@ -300,10 +300,10 @@ xgb_binning <- function(df, outcome, predictor, sample_val, learn_rate,
         nthread = 1
       )
     } else {
-      rlang::abort(
-        paste0(
-          "Outcome variable only has less than 2 levels. ",
-          "Doesn't conform to regresion or classification task."
+      cli::cli_abort(
+        c(
+          "Outcome variable only has less than 2 levels.",
+          "i" = "Doesn't conform to regresion or classification task."
         ),
         call = call
       )
@@ -330,12 +330,10 @@ xgb_binning <- function(df, outcome, predictor, sample_val, learn_rate,
 
   if (inherits(xgb_mdl, "try-error")) {
     err <- conditionMessage(attr(xgb_mdl, "condition"))
-    msg <-
-      glue(
-        "`step_discretize_xgb()` failed to create a tree with error for ",
-        "predictor '{predictor}', which was not binned. The error: {err}"
-      )
-    rlang::warn(msg)
+    cli::cli_warn(
+      "Failed to create {.fn step_discretize_xgb} tree for predictor 
+      {.val {predictor}}, which was not binned. The error: {err}"
+    )
     return(numeric(0))
   }
 
@@ -356,20 +354,21 @@ xgb_binning <- function(df, outcome, predictor, sample_val, learn_rate,
   if (inherits(xgb_tree, "try-error")) {
     err <- conditionMessage(attr(xgb_tree, "condition"))
     if (grepl("Non-tree model detected", err)) {
-      msg <- glue(
-        "`step_discretize_xgb()` failed for predictor '{predictor}'. ",
-        "This could be because the data have no trend or because ",
-        "the learning rate is too low (current value: {learn_rate}). ",
-        "The predictor was not binned."
+      cli::cli_warn(
+        c(
+          "{.fn step_discretize_xgb} failed for predictor {.val {predictor}}.",
+          "i" = "This could be because the data have no trend or because
+           the learning rate is too low (current value: {learn_rate}).",
+          "i" = "The predictor was not binned."
+        )
       )
     } else {
-      msg <- glue(
-        "`step_discretize_xgb()` failed to create a tree with error for ",
-        "predictor '{predictor}', which was not binned. The error: {err}"
+      cli::cli_warn(
+        "step_discretize_xgb() failed to create a tree with error for predictor 
+        {.val {predictor}}, which was not binned. The error: {err}"
       )
     }
 
-    rlang::warn(msg)
     return(numeric(0))
   }
 
@@ -393,6 +392,12 @@ xgb_binning <- function(df, outcome, predictor, sample_val, learn_rate,
 prep.step_discretize_xgb <- function(x, training, info = NULL, ...) {
   col_names <- recipes_eval_select(x$terms, training, info)
 
+  check_number_decimal(x$sample_val, min = 0, max = 1, arg = "sample_val")
+  check_number_decimal(x$learn_rate, min = 0, arg = "learn_rate")
+  check_number_whole(x$num_breaks, min = 0, arg = "num_breaks")
+  check_number_whole(x$tree_depth, min = 0, arg = "tree_depth")
+  check_number_whole(x$min_n, min = 0, arg = "min_n")
+
   wts <- get_case_weights(info, training)
   were_weights_used <- are_weights_used(wts)
   if (isFALSE(were_weights_used) || is.null(wts)) {
@@ -409,10 +414,10 @@ prep.step_discretize_xgb <- function(x, training, info = NULL, ...) {
     test_size <- sum(complete.cases(training)) * x$sample_val
 
     if (floor(test_size) < 2) {
-      rlang::abort(
-        glue(
+      cli::cli_abort(
+        c(
           "Too few observations in the early stopping validation set.",
-          "Consider increasing the `sample_val` parameter."
+          "i" = "Consider increasing the {.arg sample_val} parameter."
         )
       )
     }
@@ -424,11 +429,11 @@ prep.step_discretize_xgb <- function(x, training, info = NULL, ...) {
     too_few <- num_unique < 20
     if (any(too_few)) {
       predictors <- paste0("'", col_names[too_few], "'", collapse = ", ")
-      rlang::warn(
-        glue(
-          "More than 20 unique training set values are required. ",
-          "Predictors {predictors} were not processed; ",
-          "their original values will be used."
+      cli::cli_warn(
+        c(
+          "More than 20 unique training set values are required.",
+          "i" = "Predictors {predictors} were not processed; 
+                their original values will be used."
         )
       )
       col_names <- col_names[!too_few]
@@ -497,7 +502,7 @@ bake.step_discretize_xgb <- function(object, new_data, ...) {
         dig.lab = 4
       )
 
-      check_name(binned_data, new_data, object)
+      recipes::check_name(binned_data, new_data, object)
       new_data <- binned_data
     }
   }

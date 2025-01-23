@@ -83,8 +83,8 @@ and \code{learning_rate} should not be passed here. By default, \code{verbose} a
 
 \item{seed}{Two integers to control the random numbers used by the numerical
 methods. The default pulls from the main session's stream of numbers and
-will give reproducible results if the seed is set prior to calling \code{\link[=prep]{prep()}}
-or \code{\link[=bake]{bake()}}.}
+will give reproducible results if the seed is set prior to calling \link[recipes:prep]{recipes::prep}
+or \link[recipes:bake]{recipes::bake}.}
 
 \item{prefix}{A character string for the prefix of the resulting new
 variables. See notes below.}
@@ -130,7 +130,7 @@ sequence of numbers. The variable names are padded with zeros. For example, if
 the names would be \code{UMAP1} - \code{UMAP101}.
 }
 \section{Tidying}{
-When you \code{\link[=tidy.recipe]{tidy()}} this step, a tibble is retruned with
+When you \code{\link[recipes:tidy.recipe]{tidy()}} this step, a tibble is returned with
 columns \code{terms} and \code{id}:
 
 \describe{
@@ -140,13 +140,15 @@ columns \code{terms} and \code{id}:
 }
 
 \section{Tuning Parameters}{
-This step has 5 tuning parameters:
+This step has 7 tuning parameters:
 \itemize{
 \item \code{num_comp}: # Components (type: integer, default: 2)
 \item \code{neighbors}: # Nearest Neighbors (type: integer, default: 15)
 \item \code{min_dist}: Min Distance between Points (type: double, default: 0.01)
 \item \code{learn_rate}: Learning Rate (type: double, default: 1)
 \item \code{epochs}: # Epochs (type: integer, default: NULL)
+\item \code{initial}: UMAP Initialization (type: character, default: spectral)
+\item \code{target_weight}: Proportion Supervised (type: double, default: 0.5)
 }
 }
 

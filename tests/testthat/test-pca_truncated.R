@@ -1,5 +1,3 @@
-source(testthat::test_path("test-helpers.R"))
-
 test_that("step_pca_truncated", {
   skip_if_not_installed("irlba")
   skip_if_not_installed("modeldata")
@@ -84,6 +82,20 @@ test_that("Do nothing for num_comps = 0 and keep_original_cols = FALSE", {
   expect_identical(res, tibble::as_tibble(mtcars))
 })
 
+test_that("bad args", {
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_pca_truncated(num_comp = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_pca_truncated(prefix = NULL)
+  )
+})
+
 # Infrastructure ---------------------------------------------------------------
 
 test_that("bake method errors when needed non-standard role columns are missing", {
@@ -107,9 +119,9 @@ test_that("bake method errors when needed non-standard role columns are missing"
   
   rec_trained <- prep(rec, training = tr, verbose = FALSE)
   
-  expect_error(
-    bake(rec_trained, new_data = tr[, -3]),
-    class = "new_data_missing_column"
+  expect_snapshot(
+    error = TRUE,
+    bake(rec_trained, new_data = tr[, -3])
   )
 })
 
@@ -207,9 +219,8 @@ test_that("keep_original_cols - can prep recipes with it missing", {
     rec <- prep(rec)
   )
   
-  expect_error(
-    bake(rec, new_data = cells),
-    NA
+  expect_no_error(
+    bake(rec, new_data = cells)
   )
 })
 

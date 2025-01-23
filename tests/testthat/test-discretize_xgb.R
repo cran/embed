@@ -5,8 +5,6 @@ skip_on_cran()
 skip_if_not_installed("xgboost")
 skip_if_not_installed("modeldata")
 
-source(test_path("make_binned_data.R"))
-
 data("credit_data", package = "modeldata")
 data("ames", package = "modeldata")
 data("attrition", package = "modeldata")
@@ -121,7 +119,7 @@ test_that("run_xgboost for classification", {
     .num_class = NA
   )
 
-  expect_snapshot(xgboost)
+  expect_snapshot(xgboost, transform = trimws)
   expect_equal(length(xgboost$params), 8)
   expect_equal(xgboost$nfeatures, 13)
   expect_equal(xgboost$params$tree_method, "hist")
@@ -142,7 +140,7 @@ test_that("run_xgboost for multi-classification", {
     .objective = "multi:softprob"
   )
 
-  expect_snapshot(xgboost)
+  expect_snapshot(xgboost, transform = trimws)
   expect_equal(length(xgboost$params), 9)
   expect_equal(xgboost$nfeatures, 30)
   expect_equal(xgboost$params$tree_method, "hist")
@@ -163,7 +161,7 @@ test_that("run_xgboost for regression", {
     .num_class = NA
   )
 
-  expect_snapshot(xgboost)
+  expect_snapshot(xgboost, transform = trimws)
   expect_true(length(xgboost$params) > 1)
   expect_true(xgboost$nfeatures > 1)
   expect_equal(xgboost$params$tree_method, "hist")
@@ -629,6 +627,41 @@ test_that("tunable", {
   )
 })
 
+
+test_that("bad args", {
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_discretize_xgb(outcome = "class", sample_val = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_discretize_xgb(outcome = "class", learn_rate = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_discretize_xgb(outcome = "class", num_breaks = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_discretize_xgb(outcome = "class", tree_depth = -4) %>%
+      prep()
+  )
+  expect_snapshot(
+    error = TRUE,
+    recipe(~., data = mtcars) %>%
+      step_discretize_xgb(outcome = "class", min_n = -4) %>%
+      prep()
+  )
+
+})
+
 # Infrastructure ---------------------------------------------------------------
 
 test_that("bake method errors when needed non-standard role columns are missing", {
@@ -639,9 +672,9 @@ test_that("bake method errors when needed non-standard role columns are missing"
   
   rec_trained <- prep(rec, training = sim_tr_cls, verbose = FALSE)
   
-  expect_error(
-    bake(rec_trained, new_data = sim_tr_cls[, -1]),
-    class = "new_data_missing_column"
+  expect_snapshot(
+    error = TRUE,
+    bake(rec_trained, new_data = sim_tr_cls[, -1])
   )
 })
 

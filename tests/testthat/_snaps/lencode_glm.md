@@ -3,7 +3,7 @@
     Code
       new_values_ch <- bake(class_test, new_data = new_dat_ch)
     Condition
-      Warning:
+      Warning in `bake()`:
       ! There was 1 column that was a factor when the recipe was prepped:
       * `x3`
       i This may cause errors when processing new data.
@@ -13,7 +13,7 @@
     Code
       new_values_ch <- bake(reg_test, new_data = new_dat_ch)
     Condition
-      Warning:
+      Warning in `bake()`:
       ! There was 1 column that was a factor when the recipe was prepped:
       * `x3`
       i This may cause errors when processing new data.
@@ -53,6 +53,14 @@
       
       -- Operations 
       * Linear embedding for factors via GLM for: x3 | Trained, weighted
+
+# bake method errors when needed non-standard role columns are missing
+
+    Code
+      bake(rec_trained, new_data = ex_dat[, -3])
+    Condition
+      Error in `step_lencode_glm()`:
+      ! The following required column is missing from `new_data`: x3.
 
 # empty printing
 

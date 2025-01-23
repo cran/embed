@@ -8,7 +8,7 @@
 #' @inheritParams recipes::step_pca
 #' @inherit step_center return
 #' @param ... One or more selector functions to choose which variables will be
-#'   used to compute the components. See [selections()] for more details. For
+#'   used to compute the components. See [recipes::selections] for more details. For
 #'   the `tidy` method, these are not currently used.
 #' @param role For model terms created by this step, what analysis role should
 #'   they be assigned?. By default, the function assumes that the new woe
@@ -45,7 +45,7 @@
 #' with a binary outcome.  To apply it on numerical predictors, it is advisable
 #' to discretize the variables prior to running WoE. Here, each variable will be
 #' binarized to have woe associated later. This can achieved by using
-#' [step_discretize()].
+#' [recipes::step_discretize()].
 #'
 #' The argument `Laplace` is an small quantity added to the proportions of 1's
 #' and 0's with the goal to avoid log(p/0) or log(0/p) results. The numerical
@@ -62,12 +62,12 @@
 #'
 #' # Tidying
 #'
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble with columns `terms`
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble with columns `terms`
 #' (the selectors or variables selected), `value`, `n_tot`, `n_bad`, `n_good`,
 #' `p_bad`, `p_good`, `woe` and `outcome` is returned.. See [dictionary()] for
 #' more information.
 #' 
-#' When you [`tidy()`][tidy.recipe()] this step, a tibble is retruned with
+#' When you [`tidy()`][recipes::tidy.recipe] this step, a tibble is returned with
 #' columns `terms` `value`, `n_tot`, `n_bad`, `n_good`, `p_bad`, `p_good`, `woe`
 #' and `outcome` and `id`:
 #' 
@@ -156,8 +156,10 @@ step_woe <- function(recipe,
                      skip = FALSE,
                      id = rand_id("woe")) {
   if (missing(outcome)) {
-    rlang::abort('argument "outcome" is missing, with no default')
+    cli::cli_abort("The {.arg outcome} argument is missing, with no default.")
   }
+
+  check_string(prefix)
 
   add_step(
     recipe,
@@ -233,12 +235,13 @@ woe_table <- function(predictor,
   }
 
   if (length(outcome_original_labels) != 2) {
-    rlang::abort(sprintf(
-      "'outcome' must have exactly 2 categories (has %s)",
-      length(outcome_original_labels)
-    ), call = call)
+    cli::cli_abort(
+      "{.arg outcome} must have exactly 2 categories 
+      (has {length(outcome_original_labels)}).", 
+      call = call
+    )
   }
-
+  
   if (is.factor(predictor)) {
     predictor <- as.character(predictor)
   }
@@ -356,26 +359,26 @@ dictionary <- function(.data, outcome, ..., Laplace = 1e-6) {
 #' @export
 add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
   if (missing(.data)) {
-    rlang::abort('argument ".data" is missing, with no default')
+    cli::cli_abort("The {.arg .data} argument is missing, with no default.")
   }
   if (missing(outcome)) {
-    rlang::abort('argument "outcome" is missing, with no default')
+    cli::cli_abort("Argument {.arg outcome} is missing, with no default.")
   }
   if (!is.character(outcome)) {
-    rlang::abort("'outcome' should be a single character value.")
+    cli::cli_abort("{.arg outcome} should be a single character value.")
   }
 
   if (is.null(dictionary)) {
     dictionary <- dictionary(.data, outcome, ...)
   } else {
     if (is.null(dictionary$variable)) {
-      rlang::abort('column "variable" is missing in dictionary.')
+      cli::cli_abort('Column {.field variable} is missing in dictionary.')
     }
     if (is.null(dictionary$predictor)) {
-      rlang::abort('column "predictor" is missing in dictionary.')
+      cli::cli_abort('The column {.code predictor} is missing in the dictionary.')
     }
     if (is.null(dictionary$woe)) {
-      rlang::abort('column "woe" is missing in dictionary.')
+      cli::cli_abort('Column {.field woe} is missing in dictionary.')
     }
   }
 
@@ -422,6 +425,8 @@ add_woe <- function(.data, outcome, ..., dictionary = NULL, prefix = "woe") {
 prep.step_woe <- function(x, training, info = NULL, ...) {
   col_names <- recipes_eval_select(x$terms, training, info)
 
+  check_number_decimal(x$Laplace, arg = "Laplace")
+
   if (length(col_names) > 0) {
     outcome_name <- recipes_eval_select(x$outcome, training, info)
 
@@ -447,12 +452,10 @@ prep.step_woe <- function(x, training, info = NULL, ...) {
 
     if (any(n_count$low_n > 0)) {
       flagged <- n_count$variable[n_count$low_n > 0]
-      flagged <- paste0("'", unique(flagged), "'", collapse = ", ")
-      msg <- glue(
-        "Some columns used by `step_woe()` have categories with ",
-        "less than 10 values: {flagged}"
+      cli::cli_warn(
+        "Some columns used by {.fn step_woe} have categories with fewer than 10 
+        values: {.val {unique(flagged)}}"
       )
-      rlang::warn(msg)
     }
   } else {
     x$dictionary <- tibble::tibble()
