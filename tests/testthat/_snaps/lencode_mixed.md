@@ -1,4 +1,4 @@
-# factor encoded predictor
+# factor outcome - factor predictor
 
     Code
       new_values_ch <- bake(class_test, new_data = new_dat_ch)
@@ -8,7 +8,7 @@
       * `x3`
       i This may cause errors when processing new data.
 
----
+# numeric outcome - factor predictor
 
     Code
       new_values_ch <- bake(reg_test, new_data = new_dat_ch)
@@ -21,8 +21,8 @@
 # bad args
 
     Code
-      recipe(Species ~ ., data = three_class) %>% step_lencode_mixed(Sepal.Length,
-        outcome = vars(Species)) %>% prep(training = three_class, retain = TRUE)
+      prep(step_lencode_mixed(recipe(Species ~ ., data = three_class), Sepal.Length,
+      outcome = vars(Species)), training = three_class, retain = TRUE)
     Condition
       Error in `step_lencode_mixed()`:
       Caused by error in `prep()`:
