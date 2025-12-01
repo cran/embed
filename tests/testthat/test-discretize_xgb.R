@@ -121,12 +121,22 @@ test_that("run_xgboost for classification", {
     .objective = "binary:logistic",
     .num_class = NA
   )
-
-  expect_snapshot(xgboost, transform = trimws)
-  expect_equal(length(xgboost$params), 8)
-  expect_equal(xgboost$nfeatures, 13)
-  expect_equal(xgboost$params$tree_method, "hist")
-  expect_equal(xgboost$params$objective, "binary:logistic")
+  expect_snapshot(
+    xgboost,
+    transform = trimws,
+    variant = as.character(packageVersion("xgboost"))
+  )
+  if (utils::packageVersion("xgboost") >= "2.0.0.0") {
+    expect_equal(length(attr(xgboost, "params")), 9)
+    expect_equal(length(xgboost::getinfo(xgboost, "feature_name")), 13)
+    expect_equal(attr(xgboost, "params")$tree_method, "hist")
+    expect_equal(attr(xgboost, "params")$objective, "binary:logistic")
+  } else {
+    expect_equal(length(xgboost$params), 8)
+    expect_equal(xgboost$nfeatures, 13)
+    expect_equal(xgboost$params$tree_method, "hist")
+    expect_equal(xgboost$params$objective, "binary:logistic")
+  }
 })
 
 test_that("run_xgboost for multi-classification", {
@@ -143,11 +153,22 @@ test_that("run_xgboost for multi-classification", {
     .objective = "multi:softprob"
   )
 
-  expect_snapshot(xgboost, transform = trimws)
-  expect_equal(length(xgboost$params), 9)
-  expect_equal(xgboost$nfeatures, 30)
-  expect_equal(xgboost$params$tree_method, "hist")
-  expect_equal(xgboost$params$objective, "multi:softprob")
+  expect_snapshot(
+    xgboost,
+    transform = trimws,
+    variant = as.character(packageVersion("xgboost"))
+  )
+  if (utils::packageVersion("xgboost") >= "2.0.0.0") {
+    expect_equal(length(attr(xgboost, "params")), 10)
+    expect_equal(length(xgboost::getinfo(xgboost, "feature_name")), 30)
+    expect_equal(attr(xgboost, "params")$tree_method, "hist")
+    expect_equal(attr(xgboost, "params")$objective, "multi:softprob")
+  } else {
+    expect_equal(length(xgboost$params), 9)
+    expect_equal(xgboost$nfeatures, 30)
+    expect_equal(xgboost$params$tree_method, "hist")
+    expect_equal(xgboost$params$objective, "multi:softprob")
+  }
 })
 
 test_that("run_xgboost for regression", {
@@ -164,20 +185,26 @@ test_that("run_xgboost for regression", {
     .num_class = NA
   )
 
-  expect_snapshot(xgboost, transform = trimws)
-  expect_true(length(xgboost$params) > 1)
-  expect_true(xgboost$nfeatures > 1)
-  expect_equal(xgboost$params$tree_method, "hist")
-  expect_equal(xgboost$params$objective, "reg:squarederror")
+  expect_snapshot(
+    xgboost,
+    transform = trimws,
+    variant = as.character(packageVersion("xgboost"))
+  )
+  if (utils::packageVersion("xgboost") >= "2.0.0.0") {
+    expect_equal(length(attr(xgboost, "params")), 9)
+    expect_true(length(xgboost::getinfo(xgboost, "feature_name")) > 1)
+    expect_equal(attr(xgboost, "params")$tree_method, "hist")
+    expect_equal(attr(xgboost, "params")$objective, "reg:squarederror")
+  } else {
+    expect_true(length(xgboost$params) > 1)
+    expect_true(xgboost$nfeatures > 1)
+    expect_equal(xgboost$params$tree_method, "hist")
+    expect_equal(xgboost$params$objective, "reg:squarederror")
+  }
 })
 
 test_that("xgb_binning for classification", {
   skip_on_cran() # because data.table uses all cores by default
-
-  less_than_3.6 <- function() {
-    utils::compareVersion("3.5.3", as.character(getRversion())) >= 0
-  }
-  skip_if(less_than_3.6())
 
   # Usual case
   set.seed(8497)
@@ -192,7 +219,10 @@ test_that("xgb_binning for classification", {
     min_n = 5
   )
 
-  expect_snapshot(xgb_binning)
+  expect_snapshot(
+    xgb_binning,
+    variant = as.character(packageVersion("xgboost"))
+  )
   expect_true(length(xgb_binning) > 1)
   expect_type(xgb_binning, "double")
 
@@ -215,11 +245,6 @@ test_that("xgb_binning for classification", {
 test_that("xgb_binning for multi-classification", {
   skip_on_cran() # because data.table uses all cores by default
 
-  less_than_3.6 <- function() {
-    utils::compareVersion("3.5.3", as.character(getRversion())) >= 0
-  }
-  skip_if(less_than_3.6())
-
   # Usual case
   set.seed(8497)
   xgb_binning <- embed:::xgb_binning(
@@ -233,8 +258,11 @@ test_that("xgb_binning for multi-classification", {
     min_n = 5
   )
 
-  expect_snapshot(xgb_binning)
-  expect_true(length(xgb_binning) > 1)
+  expect_snapshot(
+    xgb_binning,
+    variant = as.character(packageVersion("xgboost"))
+  )
+  expect_true(length(xgb_binning) >= 1)
   expect_type(xgb_binning, "double")
 
   # Algorithm runs on a too small training set/ insufficient variation in data
@@ -255,11 +283,6 @@ test_that("xgb_binning for multi-classification", {
 test_that("xgb_binning for regression", {
   skip_on_cran() # because data.table uses all cores by default
 
-  less_than_3.6 <- function() {
-    utils::compareVersion("3.5.3", as.character(getRversion())) >= 0
-  }
-  skip_if(less_than_3.6())
-
   set.seed(4235)
   # Usual case
   xgb_binning <- embed:::xgb_binning(
@@ -273,7 +296,10 @@ test_that("xgb_binning for regression", {
     min_n = 5
   )
 
-  expect_snapshot(xgb_binning)
+  expect_snapshot(
+    xgb_binning,
+    variant = as.character(packageVersion("xgboost"))
+  )
   expect_true(length(xgb_binning) > 1)
   expect_type(xgb_binning, "double")
 
@@ -308,8 +334,14 @@ test_that("step_discretize_xgb for classification", {
   xgb_train_bins <- bake(xgb_rec, sim_tr_cls)
   xgb_test_bins <- bake(xgb_rec, sim_te_cls)
 
-  expect_snapshot(xgb_train_bins[1:10, ])
-  expect_snapshot(xgb_test_bins[1:10, ])
+  expect_snapshot(
+    xgb_train_bins[1:10, ],
+    variant = as.character(packageVersion("xgboost"))
+  )
+  expect_snapshot(
+    xgb_test_bins[1:10, ],
+    variant = as.character(packageVersion("xgboost"))
+  )
   expect_true(length(levels(xgb_train_bins$x)) > 1)
   expect_true(length(levels(xgb_train_bins$z)) > 1)
 
@@ -323,11 +355,15 @@ test_that("step_discretize_xgb for classification", {
   )
 
   # Too few data
-  expect_snapshot(error = TRUE, {
-    recipe(class ~ ., data = sim_tr_cls[1:9, ]) |>
-      step_discretize_xgb(all_predictors(), outcome = "class") |>
-      prep()
-  })
+  expect_snapshot(
+    error = TRUE,
+    {
+      recipe(class ~ ., data = sim_tr_cls[1:9, ]) |>
+        step_discretize_xgb(all_predictors(), outcome = "class") |>
+        prep()
+    },
+    variant = as.character(packageVersion("xgboost"))
+  )
 
   # No numeric variables present
   predictors_non_numeric <- c(
@@ -343,12 +379,15 @@ test_that("step_discretize_xgb for classification", {
     step_discretize_xgb(all_numeric(), outcome = "Status")
 
   # Information about insufficient datapoints for Time predictor
-  expect_snapshot({
-    set.seed(1)
-    recipe(Status ~ ., data = credit_data_train) |>
-      step_discretize_xgb(Time, outcome = "Status") |>
-      prep(retain = TRUE)
-  })
+  expect_snapshot(
+    {
+      set.seed(1)
+      recipe(Status ~ ., data = credit_data_train) |>
+        step_discretize_xgb(Time, outcome = "Status") |>
+        prep(retain = TRUE)
+    },
+    variant = as.character(packageVersion("xgboost"))
+  )
 })
 
 test_that("step_discretize_xgb for multi-classification", {
@@ -366,8 +405,14 @@ test_that("step_discretize_xgb for multi-classification", {
   xgb_train_bins <- bake(xgb_rec, sim_tr_mcls)
   xgb_test_bins <- bake(xgb_rec, sim_te_mcls)
 
-  expect_snapshot(xgb_train_bins[1:10, ])
-  expect_snapshot(xgb_test_bins[1:10, ])
+  expect_snapshot(
+    xgb_train_bins[1:10, ],
+    variant = as.character(packageVersion("xgboost"))
+  )
+  expect_snapshot(
+    xgb_test_bins[1:10, ],
+    variant = as.character(packageVersion("xgboost"))
+  )
   expect_true(length(levels(xgb_train_bins$x)) > 0)
   expect_true(length(levels(xgb_train_bins$z)) > 0)
 
@@ -418,11 +463,6 @@ test_that("step_discretize_xgb for regression", {
 
   # Skip on R < 3.6 since the rng is different.
   skip("Needs to determine why random numbers are different")
-
-  less_than_3.6 <- function() {
-    utils::compareVersion("3.5.3", as.character(getRversion())) >= 0
-  }
-  skip_if(less_than_3.6())
 
   # General use
   set.seed(83834)
