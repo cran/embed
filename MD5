@@ -1,7 +1,7 @@
-342b12a9acd37484ab53e58329a60b61 *DESCRIPTION
+18aa653ba493f73867216df1fb1dd218 *DESCRIPTION
 009cb94913c67a64ac906db589957a6c *LICENSE
 5e40bacbd051baf62c28ec9716704b7c *NAMESPACE
-0b00e57afb75a262ee5d980a6505b749 *NEWS.md
+1469af80a2106326ff6aa4b3004f2b53 *NEWS.md
 320a65c0a42f2f39bef4cbbdc3c58e7c *R/aaa.R
 a48d4caf48e1650540f9fd31587ae9bc *R/collapse_cart.R
 0642bf0af63b363b30f307b753948205 *R/collapse_stringdist.R
@@ -22,9 +22,9 @@ f78d550f8a170e8281248da5aab26c30 *R/lencode_mixed.R
 25a18e4f5af027e4615961f454eb8fdf *R/pca_truncated.R
 d2b1815f5245db4092de343b19c83452 *R/reexports.R
 1e78b9d210c5788ac54ad7441ea5c37e *R/tunable.R
-356e127fa3731e5e3da5376d7eff63f3 *R/umap.R
+8cef6330ccce66883368abd29b621f04 *R/umap.R
 d364ea11052b7d2073fcca6a29a80016 *R/woe.R
-1bf18d9c216b8d95033f0bd2fe2906b2 *build/partial.rdb
+76e123f5dcc8dee07678412adc0a2a84 *build/partial.rdb
 5e0acd7369a06b14057327a1861d5333 *data/solubility.rda
 2d06cad0ec4a0c49d3f93174dc61c336 *man/add_woe.Rd
 215f4570906e4a62a3bacbb88fd6f306 *man/dictionary.Rd
@@ -77,7 +77,7 @@ bc994249609fc8d6c7d8e93bdd1f0f8e *tests/testthat/_snaps/lencode_glm.md
 51a3e32702a420363640d2c6dc840332 *tests/testthat/_snaps/pca_sparse.md
 65d830210f3a4aed5cc3867a749a9ba6 *tests/testthat/_snaps/pca_sparse_bayes.md
 d871a26414cc0881ffb4bd601e65a02a *tests/testthat/_snaps/pca_truncated.md
-3463a0be8c6d31fa803a755eed2f4d80 *tests/testthat/_snaps/umap.md
+f49f41a16ad1f7381aec8785b706624e *tests/testthat/_snaps/umap.md
 4de090f396d0330dcc1b345a98265621 *tests/testthat/_snaps/woe.md
 4b8da9fda57cbeac4afb8bcebcdb89d9 *tests/testthat/helper-make_binned_data.R
 12c5061bfd7fef306da1bec319c94c68 *tests/testthat/helper-make_example_data.R
@@ -97,5 +97,5 @@ e99659d7e7a5d0080a34fe00025ae737 *tests/testthat/test-pca_sparse.R
 d391d62d9c5399bf4649250080418f97 *tests/testthat/test-pca_sparse_bayes.R
 d0cf7dd6cea24d9cc012d78434534a3d *tests/testthat/test-pca_truncated.R
 1de4c5a2b3b2234cc768657c3d65a42e *tests/testthat/test-s3-methods.R
-5eef26fdd3358a3d773197b3366222e3 *tests/testthat/test-umap.R
+93478f5a95ac2294fa34926cfa79a7bf *tests/testthat/test-umap.R
 e6521b0cb475ffad788fa5a987d0be0a *tests/testthat/test-woe.R
